@@ -11,14 +11,12 @@ import { Syringe, Baby, Scale, ShoppingCart, HeartPulse } from "lucide-react";
 import type { Animal, Species } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CowIcon, PigIcon, GoatIcon } from "@/components/icons";
-import { Bird, Rabbit, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Bird, Rabbit } from "lucide-react";
 import { useAnimals } from "@/hooks/use-animals";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
-import { useAccounting } from "@/hooks/use-accounting";
-import { useInvoices } from "@/hooks/use-invoices";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +24,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -66,7 +63,6 @@ const formSchema = z.object({
   age: z.coerce.number().min(1, "Age is required"),
   weight: z.coerce.number().min(1, "Weight is required"),
   lot: z.string().min(1, "Lot is required"),
-  status: z.enum(["Healthy", "Sick", "Sold"]),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -85,23 +81,23 @@ function AnimalFormDialog({
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: { species: "Bovine", status: "Healthy" },
+    defaultValues: { species: "Bovine", name: "", lot: "", age: 0, weight: 0 },
   });
 
   function onSubmit(values: FormData) {
-    addAnimal(values as Omit<Animal, 'id'>);
+    addAnimal({ ...values, status: "Healthy" });
     toast({
       title: `Animal Added`,
-      description: `${values.name} has been successfully added.`,
+      description: `${values.name} has been successfully added to lot ${values.lot}.`,
     });
     onOpenChange(false);
     onSuccess();
-    form.reset({ species: "Bovine", status: "Healthy" });
+    form.reset({ species: "Bovine", name: "", lot: "", age: 0, weight: 0 });
   }
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Start New Cycle by Adding an Animal</DialogTitle>
           <DialogDescription>
@@ -110,12 +106,12 @@ function AnimalFormDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
+             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>Animal Name</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., Bessie" {...field} />
                   </FormControl>
@@ -123,37 +119,53 @@ function AnimalFormDialog({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="species"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Species</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a species" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Bovine">Bovine</SelectItem>
-                      <SelectItem value="Porcine">Porcine</SelectItem>
-                      <SelectItem value="Poultry">Poultry</SelectItem>
-                      <SelectItem value="Caprine">Caprine</SelectItem>
-                      <SelectItem value="Rabbit">Rabbit</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+             <div className="grid grid-cols-2 gap-4">
+               <FormField
+                  control={form.control}
+                  name="species"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Species</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Bovine">Bovine</SelectItem>
+                          <SelectItem value="Porcine">Porcine</SelectItem>
+                          <SelectItem value="Poultry">Poultry</SelectItem>
+                          <SelectItem value="Caprine">Caprine</SelectItem>
+                          <SelectItem value="Rabbit">Rabbit</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="lot"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Lot Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., A1" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="age"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Age (mths)</FormLabel>
+                    <FormLabel>Age (months)</FormLabel>
                     <FormControl>
                       <Input type="number" placeholder="e.g., 24" {...field} />
                     </FormControl>
@@ -175,41 +187,9 @@ function AnimalFormDialog({
                 )}
               />
             </div>
-            <FormField
-              control={form.control}
-              name="lot"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Lot</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., A1" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                     <Select onValueChange={field.onChange} defaultValue={field.value} disabled>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Healthy">Healthy</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            
             <DialogFooter>
-              <Button type="submit">Add Animal</Button>
+              <Button type="submit">Add Animal to Cycle</Button>
             </DialogFooter>
           </form>
         </Form>
@@ -274,7 +254,7 @@ export default function CyclesPage() {
           return (
             <Card key={cycle.id}>
               <CardHeader>
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div>
                         <CardTitle className="flex items-center gap-2">
                           <SpeciesIcon className="h-6 w-6 text-primary" />
@@ -295,7 +275,7 @@ export default function CyclesPage() {
                         const Icon = step.icon;
                         return (
                             <div key={index} className="flex flex-col items-center gap-2 text-center w-24">
-                                <div className={cn("w-12 h-12 rounded-full flex items-center justify-center border-2", statusClasses[step.status])}>
+                                <div className={cn("w-12 h-12 rounded-full flex items-center justify-center border-2", statusClasses[step.status as keyof typeof statusClasses])}>
                                     <Icon className="h-6 w-6" />
                                 </div>
                                 <div className="text-xs font-medium">{step.name}</div>
