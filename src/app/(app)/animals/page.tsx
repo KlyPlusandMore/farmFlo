@@ -33,7 +33,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import type { Animal, Species } from "@/lib/types";
+import type { Animal, Species, Transaction } from "@/lib/types";
 import { CowIcon, PigIcon, GoatIcon } from "@/components/icons";
 import { Bird, Rabbit, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -63,6 +63,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useAccounting } from "@/hooks/use-accounting";
+
 
 const initialAnimals: Animal[] = [
   { id: "B-001", name: "Bessie", species: "Bovine", age: 24, weight: 650, lot: "A1", status: "Healthy" },
@@ -309,11 +311,29 @@ function DeleteAnimalAlert({
 
 export default function AnimalsPage() {
   const [animals, setAnimals] = useState<Animal[]>(initialAnimals);
+  const { addTransaction } = useAccounting();
   const { toast } = useToast();
 
   function handleSaveAnimal(data: FormData) {
     if (data.id) { // Update
+      const originalAnimal = animals.find(a => a.id === data.id);
       setAnimals(prev => prev.map(animal => animal.id === data.id ? { ...animal, ...data } as Animal : animal));
+      
+      // If status changed to 'Sold' and salePrice is available, add transaction
+      if (data.status === 'Sold' && originalAnimal?.status !== 'Sold' && data.salePrice) {
+        addTransaction({
+            date: new Date().toISOString().split('T')[0],
+            description: `Sale of meat from ${data.name} (${data.id})`,
+            category: 'Sale',
+            type: 'Income',
+            amount: data.salePrice
+        });
+        toast({
+            title: "Income Recorded",
+            description: `Sale of ${data.name} for €${data.salePrice} added to accounting.`,
+        });
+      }
+
     } else { // Create
       const speciesPrefix = data.species.charAt(0).toUpperCase();
       const newId = `${speciesPrefix}-${String(animals.filter(a => a.species === data.species).length + 1).padStart(3, '0')}`;

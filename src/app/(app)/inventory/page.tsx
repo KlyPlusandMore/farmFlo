@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState } from "react";
@@ -62,6 +63,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
+import { useAccounting } from "@/hooks/use-accounting";
 
 
 const initialInventory: InventoryItem[] = [
@@ -80,6 +82,7 @@ const formSchema = z.object({
   quantity: z.coerce.number().min(0, "Quantity cannot be negative"),
   unit: z.string().min(1, "Unit is required"),
   lowStockThreshold: z.coerce.number().min(0, "Threshold cannot be negative"),
+  purchasePrice: z.coerce.number().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -110,7 +113,14 @@ function InventoryFormDialog({
     });
     setOpen(false);
     if (mode === "add") {
-      form.reset();
+      form.reset({
+        name: "",
+        category: "Feed",
+        quantity: 0,
+        unit: "",
+        lowStockThreshold: 10,
+        purchasePrice: 0,
+      });
     }
   }
 
@@ -189,6 +199,19 @@ function InventoryFormDialog({
                 )}
               />
             </div>
+             <FormField
+                control={form.control}
+                name="purchasePrice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Purchase Price (€)</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="Total cost of purchase" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             <FormField
               control={form.control}
               name="lowStockThreshold"
@@ -243,11 +266,30 @@ function DeleteItemAlert({
 
 export default function InventoryPage() {
   const [inventory, setInventory] = useState<InventoryItem[]>(initialInventory);
+  const { addTransaction } = useAccounting();
   const { toast } = useToast();
 
   function handleSaveItem(data: FormData) {
-    if (data.id) { // Update
+     if (data.id) { // Update
+      const originalItem = inventory.find(i => i.id === data.id);
+      const quantityAdded = data.quantity - (originalItem?.quantity || 0);
+
       setInventory(prev => prev.map(item => item.id === data.id ? { ...item, ...data } as InventoryItem : item));
+      
+      if (data.purchasePrice && data.purchasePrice > 0 && quantityAdded > 0) {
+        addTransaction({
+          date: new Date().toISOString().split('T')[0],
+          description: `Purchase of ${data.name}`,
+          category: data.category,
+          type: 'Expense',
+          amount: data.purchasePrice
+        });
+        toast({
+            title: "Expense Recorded",
+            description: `Purchase of ${data.name} for €${data.purchasePrice} added to accounting.`
+        });
+      }
+
     } else { // Create
       const categoryPrefix = data.category.charAt(0).toUpperCase();
       const newId = `${categoryPrefix}-${String(inventory.filter(i => i.category === data.category).length + 1).padStart(3, '0')}`;
@@ -256,6 +298,19 @@ export default function InventoryPage() {
         id: newId,
       };
       setInventory(prev => [...prev, newItem]);
+       if (data.purchasePrice && data.purchasePrice > 0) {
+        addTransaction({
+            date: new Date().toISOString().split('T')[0],
+            description: `Purchase of ${data.name}`,
+            category: data.category,
+            type: 'Expense',
+            amount: data.purchasePrice
+        });
+        toast({
+            title: "Expense Recorded",
+            description: `Purchase of ${data.name} for €${data.purchasePrice} added to accounting.`
+        });
+      }
     }
   }
 

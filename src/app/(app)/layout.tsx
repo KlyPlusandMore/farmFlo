@@ -16,7 +16,6 @@ import {
   SidebarInset,
   SidebarFooter,
   SidebarTrigger,
-  useSidebar,
 } from "@/components/ui/sidebar";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
@@ -31,6 +30,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GoatIcon } from "@/components/icons";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { AccountingProvider } from "@/hooks/use-accounting";
 
 
 const navItems = [
@@ -100,12 +100,13 @@ function SidebarItems() {
 }
 
 function AppLayout({ children }: { children: React.ReactNode }) {
-  const { isMobile, openMobile, setOpenMobile } = useSidebar();
-  
-  if (isMobile === null) {
-    return null;
-  }
+  const isMobile = useIsMobile();
+  const [openMobile, setOpenMobile] = React.useState(false)
 
+  if (isMobile === null) {
+    return null; // or a loading skeleton
+  }
+  
   return (
     <>
       {isMobile ? (
@@ -132,8 +133,10 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 // Wrap the layout with the provider
 export default function AppLayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider>
-      <AppLayout>{children}</AppLayout>
-    </SidebarProvider>
+    <AccountingProvider>
+        <SidebarProvider>
+            <AppLayout>{children}</AppLayout>
+        </SidebarProvider>
+    </AccountingProvider>
   )
 }

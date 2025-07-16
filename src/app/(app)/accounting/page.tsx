@@ -1,7 +1,8 @@
 
+
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -45,12 +46,8 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { DollarSign, TrendingUp, TrendingDown } from "lucide-react";
+import { useAccounting } from "@/hooks/use-accounting";
 
-const initialTransactions: Transaction[] = [
-  { id: "T-001", date: "2023-07-10", description: "Sale of Billy (G-001)", category: "Sale", type: "Income", amount: 150 },
-  { id: "T-002", date: "2023-07-05", description: "Purchase Corn Feed", category: "Feed", type: "Expense", amount: 300 },
-  { id: "T-003", date: "2023-07-02", description: "Purchase Ivermectin", category: "Medicine", type: "Expense", amount: 75 },
-];
 
 const formSchema = z.object({
   id: z.string().optional(),
@@ -67,7 +64,7 @@ function TransactionFormDialog({
   onSave,
   children,
 }: {
-  onSave: (data: FormData) => void;
+  onSave: (data: Omit<Transaction, 'id'>) => void;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -207,7 +204,7 @@ function TransactionFormDialog({
 
 
 export default function AccountingPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+  const { transactions, addTransaction } = useAccounting();
 
   const { totalRevenue, totalExpenses, netProfit } = useMemo(() => {
     const totalRevenue = transactions
@@ -220,19 +217,10 @@ export default function AccountingPage() {
     return { totalRevenue, totalExpenses, netProfit };
   }, [transactions]);
   
-  function handleSaveTransaction(data: FormData) {
-    const newId = `T-${String(transactions.length + 1).padStart(3, '0')}`;
-    const newTransaction: Transaction = {
-        ...data,
-        id: newId,
-    };
-    setTransactions(prev => [newTransaction, ...prev].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-  }
-
   return (
     <>
       <PageHeader title="Accounting" description="Track your farm's financial performance.">
-        <TransactionFormDialog onSave={handleSaveTransaction}>
+        <TransactionFormDialog onSave={addTransaction}>
           <Button>Add Transaction</Button>
         </TransactionFormDialog>
       </PageHeader>

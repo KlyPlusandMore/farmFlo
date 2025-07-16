@@ -20,6 +20,7 @@ export interface InventoryItem {
   quantity: number;
   unit: string;
   lowStockThreshold: number;
+  purchasePrice?: number;
 }
 
 export type CycleStep = {
