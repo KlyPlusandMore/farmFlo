@@ -53,14 +53,13 @@ const formSchema = z.object({
   id: z.string().optional(),
   date: z.string().min(1, "Date is required"),
   description: z.string().min(1, "Description is required"),
-  category: z.enum(["Sale", "Feed", "Medicine", "Equipment", "Other"]),
-  type: z.enum(["Income", "Expense"]),
+  category: z.enum(["Feed", "Medicine", "Equipment", "Other"]),
   amount: z.coerce.number().positive("Amount must be positive"),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
-function TransactionFormDialog({
+function ExpenseFormDialog({
   onSave,
   children,
 }: {
@@ -73,21 +72,19 @@ function TransactionFormDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       date: new Date().toISOString().split("T")[0],
-      type: "Expense",
       category: "Other",
     },
   });
 
   function onSubmit(values: FormData) {
-    onSave(values);
+    onSave({ ...values, type: "Expense" });
     toast({
-      title: "Transaction Added",
-      description: "The transaction has been successfully recorded.",
+      title: "Expense Added",
+      description: "The expense has been successfully recorded.",
     });
     setOpen(false);
     form.reset({
       date: new Date().toISOString().split("T")[0],
-      type: "Expense",
       category: "Other",
       description: "",
       amount: 0,
@@ -99,9 +96,9 @@ function TransactionFormDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Transaction</DialogTitle>
+          <DialogTitle>Add New Expense</DialogTitle>
           <DialogDescription>
-            Enter the details of the new transaction.
+            Enter the details of the new expense.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -113,29 +110,8 @@ function TransactionFormDialog({
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Sale of animal" {...field} />
+                    <Input placeholder="e.g., Purchase of corn feed" {...field} />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Income">Income</SelectItem>
-                      <SelectItem value="Expense">Expense</SelectItem>
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -153,7 +129,6 @@ function TransactionFormDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Sale">Sale</SelectItem>
                       <SelectItem value="Feed">Feed</SelectItem>
                       <SelectItem value="Medicine">Medicine</SelectItem>
                       <SelectItem value="Equipment">Equipment</SelectItem>
@@ -193,7 +168,7 @@ function TransactionFormDialog({
                 />
             </div>
             <DialogFooter>
-              <Button type="submit">Save Transaction</Button>
+              <Button type="submit">Save Expense</Button>
             </DialogFooter>
           </form>
         </Form>
@@ -220,9 +195,9 @@ export default function AccountingPage() {
   return (
     <>
       <PageHeader title="Accounting" description="Track your farm's financial performance.">
-        <TransactionFormDialog onSave={addTransaction}>
-          <Button>Add Transaction</Button>
-        </TransactionFormDialog>
+        <ExpenseFormDialog onSave={addTransaction}>
+          <Button>Add Expense</Button>
+        </ExpenseFormDialog>
       </PageHeader>
       
       <div className="grid gap-4 md:grid-cols-3 mb-6">
