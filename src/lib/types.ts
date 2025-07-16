@@ -10,6 +10,7 @@ export interface Animal {
   weight: number; // in kg
   lot: string;
   status: "Healthy" | "Sick" | "Sold";
+  salePrice?: number;
 }
 
 export interface InventoryItem {
@@ -35,4 +36,13 @@ export type ProductionCycle = {
   animalCount: number;
   startDate: string;
   steps: CycleStep[];
+};
+
+export type Transaction = {
+  id: string;
+  date: string;
+  description: string;
+  category: "Sale" | "Feed" | "Medicine" | "Equipment" | "Other";
+  type: "Income" | "Expense";
+  amount: number;
 };

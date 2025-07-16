@@ -26,6 +26,7 @@ import {
   Warehouse,
   BrainCircuit,
   Settings,
+  CircleDollarSign,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GoatIcon } from "@/components/icons";
@@ -37,6 +38,7 @@ const navItems = [
   { href: "/animals", icon: Rabbit, label: "Animals" },
   { href: "/cycles", icon: LineChart, label: "Cycles" },
   { href: "/inventory", icon: Warehouse, label: "Inventory" },
+  { href: "/accounting", icon: CircleDollarSign, label: "Accounting" },
   { href: "/ai-insights", icon: BrainCircuit, label: "AI Insights" },
   { href: "/reports", icon: LineChart, label: "Reports" },
 ];
@@ -58,14 +60,17 @@ function SidebarItems() {
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <Link href={item.href}>
-                <SidebarMenuButton
-                  isActive={pathname === item.href}
-                  tooltip={item.label}
-                >
-                  <item.icon />
-                  <span>{item.label}</span>
-                </SidebarMenuButton>
+              <Link href={item.href} legacyBehavior passHref>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === item.href}
+                    tooltip={item.label}
+                  >
+                    <a>
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </a>
+                  </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
           ))}

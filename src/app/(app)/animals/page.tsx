@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState } from "react";
@@ -69,7 +70,7 @@ const initialAnimals: Animal[] = [
   { id: "P-001", name: "Porky", species: "Porcine", age: 6, weight: 110, lot: "B2", status: "Healthy" },
   { id: "P-002", name: "Wilbur", species: "Porcine", age: 7, weight: 125, lot: "B2", status: "Sick" },
   { id: "C-001", name: "Cluck", species: "Poultry", age: 12, weight: 2, lot: "C3", status: "Healthy" },
-  { id: "G-001", name: "Billy", species: "Caprine", age: 18, weight: 60, lot: "D4", status: "Sold" },
+  { id: "G-001", name: "Billy", species: "Caprine", age: 18, weight: 60, lot: "D4", status: "Sold", salePrice: 150 },
   { id: "R-001", name: "Roger", species: "Rabbit", age: 4, weight: 3, lot: "E5", status: "Healthy" },
 ];
 
@@ -94,8 +95,18 @@ const formSchema = z.object({
   age: z.coerce.number().min(1, "Age is required"),
   weight: z.coerce.number().min(1, "Weight is required"),
   lot: z.string().min(1, "Lot is required"),
-  status: z.enum(["Healthy", "Sick", "Sold"]).optional(),
+  status: z.enum(["Healthy", "Sick", "Sold"]),
+  salePrice: z.coerce.number().optional(),
+}).refine(data => {
+    if (data.status === 'Sold') {
+        return data.salePrice !== undefined && data.salePrice > 0;
+    }
+    return true;
+}, {
+    message: "Sale price is required when status is Sold.",
+    path: ["salePrice"],
 });
+
 
 type FormData = z.infer<typeof formSchema>;
 
@@ -117,6 +128,8 @@ function AnimalFormDialog({
     defaultValues: initialData || { species: "Bovine", status: "Healthy" },
   });
 
+  const status = form.watch("status");
+
   function onSubmit(values: FormData) {
     onSave(values);
     toast({
@@ -125,7 +138,7 @@ function AnimalFormDialog({
     });
     setOpen(false);
     if (mode === "add") {
-      form.reset();
+      form.reset({ species: "Bovine", status: "Healthy" });
     }
   }
   
@@ -219,6 +232,43 @@ function AnimalFormDialog({
                 </FormItem>
               )}
             />
+             <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Healthy">Healthy</SelectItem>
+                        <SelectItem value="Sick">Sick</SelectItem>
+                        <SelectItem value="Sold">Sold</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {status === 'Sold' && (
+                 <FormField
+                    control={form.control}
+                    name="salePrice"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Sale Price (€)</FormLabel>
+                        <FormControl>
+                        <Input type="number" placeholder="e.g., 1200" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+              )}
             <DialogFooter>
               <Button type="submit">Save Changes</Button>
             </DialogFooter>
@@ -270,7 +320,6 @@ export default function AnimalsPage() {
       const newAnimal: Animal = {
         ...data,
         id: newId,
-        status: "Healthy",
       };
       setAnimals(prev => [...prev, newAnimal]);
     }
@@ -304,6 +353,7 @@ export default function AnimalsPage() {
               <TableHead>Weight (kg)</TableHead>
               <TableHead>Lot</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Sale Price</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -325,6 +375,9 @@ export default function AnimalsPage() {
                   <TableCell>{animal.lot}</TableCell>
                   <TableCell>
                     <Badge variant={statusColors[animal.status]}>{animal.status}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    {animal.salePrice ? `€${animal.salePrice.toFixed(2)}` : 'N/A'}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
