@@ -18,26 +18,30 @@ const initialTransactions: Transaction[] = [
 ];
 
 export const AccountingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    if (typeof window === 'undefined') {
-        return initialTransactions;
-    }
-    try {
-      const item = window.localStorage.getItem('transactions');
-      return item ? JSON.parse(item) : initialTransactions;
-    } catch (error) {
-      console.error(error);
-      return initialTransactions;
-    }
-  });
+  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     try {
-        window.localStorage.setItem('transactions', JSON.stringify(transactions));
+      const item = window.localStorage.getItem('transactions');
+      if (item) {
+        setTransactions(JSON.parse(item));
+      }
     } catch (error) {
-        console.error(error);
+      console.error(error);
     }
-  }, [transactions]);
+    setIsInitialized(true);
+  }, []);
+
+  useEffect(() => {
+    if (isInitialized) {
+      try {
+          window.localStorage.setItem('transactions', JSON.stringify(transactions));
+      } catch (error) {
+          console.error(error);
+      }
+    }
+  }, [transactions, isInitialized]);
   
   const addTransaction = useCallback((transaction: Omit<Transaction, 'id'>) => {
     setTransactions(prev => {
