@@ -81,7 +81,7 @@ export default function InvoiceDetailPage() {
                 <div className="text-right">
                     <p><span className="font-semibold">Issue Date:</span> {new Date(invoice.issueDate).toLocaleDateString()}</p>
                     <p><span className="font-semibold">Due Date:</span> {new Date(invoice.dueDate).toLocaleDateString()}</p>
-                    <p><span className="font-semibold">Status:</span> <Badge variant={statusColors[invoice.status]}>{invoice.status}</Badge></p>
+                    <div><span className="font-semibold">Status:</span> <Badge variant={statusColors[invoice.status]}>{invoice.status}</Badge></div>
                 </div>
             </div>
 
