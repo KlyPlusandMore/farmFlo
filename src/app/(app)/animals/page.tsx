@@ -14,10 +14,26 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import type { Animal, Species } from "@/lib/types";
 import { CowIcon, PigIcon, GoatIcon } from "@/components/icons";
-import { Bird, Rabbit } from "lucide-react";
+import { Bird, Rabbit, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -71,45 +87,55 @@ const statusColors: Record<Animal["status"], "default" | "destructive" | "second
 };
 
 const formSchema = z.object({
+  id: z.string().optional(),
   name: z.string().min(1, "Name is required"),
   species: z.enum(["Bovine", "Porcine", "Poultry", "Caprine", "Rabbit"]),
   age: z.coerce.number().min(1, "Age is required"),
   weight: z.coerce.number().min(1, "Weight is required"),
   lot: z.string().min(1, "Lot is required"),
+  status: z.enum(["Healthy", "Sick", "Sold"]).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
-function AddAnimalDialog({ onAnimalAdd }: { onAnimalAdd: (animal: Omit<Animal, "id" | "status">) => void }) {
+function AnimalFormDialog({
+  mode,
+  initialData,
+  onSave,
+  children,
+}: {
+  mode: "add" | "edit";
+  initialData?: Animal;
+  onSave: (data: FormData) => void;
+  children: React.ReactNode;
+}) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      species: "Bovine",
-    },
+    defaultValues: initialData || { species: "Bovine", status: "Healthy" },
   });
 
   function onSubmit(values: FormData) {
-    onAnimalAdd(values);
+    onSave(values);
     toast({
-      title: "Animal Added",
-      description: `${values.name} has been added to the list.`,
+      title: `Animal ${mode === "add" ? "Added" : "Updated"}`,
+      description: `${values.name} has been successfully ${mode === "add" ? "added" : "updated"}.`,
     });
     setOpen(false);
-    form.reset();
+    if (mode === "add") {
+      form.reset();
+    }
   }
-
+  
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>Add Animal</Button>
-      </DialogTrigger>
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Animal</DialogTitle>
+          <DialogTitle>{mode === "add" ? "Add New Animal" : "Edit Animal"}</DialogTitle>
           <DialogDescription>
-            Enter the details of the new animal to add it to your farm.
+            {mode === 'add' ? "Enter the details of the new animal." : `Editing details for ${initialData?.name}.`}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -193,7 +219,7 @@ function AddAnimalDialog({ onAnimalAdd }: { onAnimalAdd: (animal: Omit<Animal, "
               )}
             />
             <DialogFooter>
-              <Button type="submit">Add Animal</Button>
+              <Button type="submit">Save Changes</Button>
             </DialogFooter>
           </form>
         </Form>
@@ -202,24 +228,68 @@ function AddAnimalDialog({ onAnimalAdd }: { onAnimalAdd: (animal: Omit<Animal, "
   );
 }
 
+function DeleteAnimalAlert({
+  animalName,
+  onDelete,
+  children,
+}: {
+  animalName: string;
+  onDelete: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete {animalName} from the records.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={onDelete}>Delete</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 export default function AnimalsPage() {
   const [animals, setAnimals] = useState<Animal[]>(initialAnimals);
+  const { toast } = useToast();
 
-  function handleAnimalAdd(newAnimalData: Omit<Animal, "id" | "status">) {
-    const speciesPrefix = newAnimalData.species.charAt(0).toUpperCase();
-    const newId = `${speciesPrefix}-${String(animals.filter(a => a.species === newAnimalData.species).length + 1).padStart(3, '0')}`;
-    const newAnimal: Animal = {
-      ...newAnimalData,
-      id: newId,
-      status: "Healthy",
-    };
-    setAnimals(prev => [...prev, newAnimal]);
+  function handleSaveAnimal(data: FormData) {
+    if (data.id) { // Update
+      setAnimals(prev => prev.map(animal => animal.id === data.id ? { ...animal, ...data } as Animal : animal));
+    } else { // Create
+      const speciesPrefix = data.species.charAt(0).toUpperCase();
+      const newId = `${speciesPrefix}-${String(animals.filter(a => a.species === data.species).length + 1).padStart(3, '0')}`;
+      const newAnimal: Animal = {
+        ...data,
+        id: newId,
+        status: "Healthy",
+      };
+      setAnimals(prev => [...prev, newAnimal]);
+    }
+  }
+
+  function handleDeleteAnimal(animalId: string) {
+    setAnimals(prev => prev.filter(animal => animal.id !== animalId));
+    toast({
+      title: "Animal Deleted",
+      description: "The animal has been removed from the list.",
+      variant: "destructive",
+    });
   }
 
   return (
     <>
       <PageHeader title="Animal Management" description="View and manage all animals in your farm.">
-        <AddAnimalDialog onAnimalAdd={handleAnimalAdd} />
+        <AnimalFormDialog mode="add" onSave={handleSaveAnimal}>
+          <Button>Add Animal</Button>
+        </AnimalFormDialog>
       </PageHeader>
       
       <div className="bg-card rounded-lg border shadow-sm">
@@ -233,6 +303,7 @@ export default function AnimalsPage() {
               <TableHead>Weight (kg)</TableHead>
               <TableHead>Lot</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -253,6 +324,33 @@ export default function AnimalsPage() {
                   <TableCell>{animal.lot}</TableCell>
                   <TableCell>
                     <Badge variant={statusColors[animal.status]}>{animal.status}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <AnimalFormDialog mode="edit" initialData={animal} onSave={handleSaveAnimal}>
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            <span>Edit</span>
+                          </DropdownMenuItem>
+                        </AnimalFormDialog>
+                        <DeleteAnimalAlert
+                          animalName={animal.name}
+                          onDelete={() => handleDeleteAnimal(animal.id)}
+                        >
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                             <Trash2 className="mr-2 h-4 w-4" />
+                             <span>Delete</span>
+                          </DropdownMenuItem>
+                        </DeleteAnimalAlert>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               );
