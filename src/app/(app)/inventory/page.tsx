@@ -1,3 +1,10 @@
+
+"use client";
+
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { PageHeader } from "@/components/page-header";
 import {
   Table,
@@ -7,12 +14,57 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import type { InventoryItem } from "@/lib/types";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 
-const inventory: InventoryItem[] = [
+
+const initialInventory: InventoryItem[] = [
   { id: "F-001", name: "Corn Feed", category: "Feed", quantity: 500, unit: "kg", lowStockThreshold: 100 },
   { id: "F-002", name: "Soybean Meal", category: "Feed", quantity: 80, unit: "kg", lowStockThreshold: 150 },
   { id: "M-001", name: "Ivermectin", category: "Medicine", quantity: 20, unit: "bottles", lowStockThreshold: 10 },
@@ -21,11 +73,207 @@ const inventory: InventoryItem[] = [
   { id: "E-002", name: "Heat Lamps", category: "Equipment", quantity: 8, unit: "units", lowStockThreshold: 4 },
 ];
 
+const formSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, "Name is required"),
+  category: z.enum(["Feed", "Medicine", "Equipment"]),
+  quantity: z.coerce.number().min(0, "Quantity cannot be negative"),
+  unit: z.string().min(1, "Unit is required"),
+  lowStockThreshold: z.coerce.number().min(0, "Threshold cannot be negative"),
+});
+
+type FormData = z.infer<typeof formSchema>;
+
+function InventoryFormDialog({
+  mode,
+  initialData,
+  onSave,
+  children,
+}: {
+  mode: "add" | "edit";
+  initialData?: InventoryItem;
+  onSave: (data: FormData) => void;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const { toast } = useToast();
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: initialData || { category: "Feed", quantity: 0, lowStockThreshold: 10 },
+  });
+
+  function onSubmit(values: FormData) {
+    onSave(values);
+    toast({
+      title: `Item ${mode === "add" ? "Added" : "Updated"}`,
+      description: `${values.name} has been successfully ${mode === "add" ? "added" : "updated"}.`,
+    });
+    setOpen(false);
+    if (mode === "add") {
+      form.reset();
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{mode === "add" ? "Add New Item" : "Edit Item"}</DialogTitle>
+          <DialogDescription>
+            {mode === 'add' ? "Enter the details of the new inventory item." : `Editing details for ${initialData?.name}.`}
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Item Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., Corn Feed" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Feed">Feed</SelectItem>
+                      <SelectItem value="Medicine">Medicine</SelectItem>
+                      <SelectItem value="Equipment">Equipment</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantity</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="e.g., 500" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="unit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Unit</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., kg" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormField
+              control={form.control}
+              name="lowStockThreshold"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Low Stock Threshold</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="e.g., 100" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+              <Button type="submit">Save Changes</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DeleteItemAlert({
+  itemName,
+  onDelete,
+  children,
+}: {
+  itemName: string;
+  onDelete: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete {itemName} from the inventory.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={onDelete}>Delete</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+
 export default function InventoryPage() {
+  const [inventory, setInventory] = useState<InventoryItem[]>(initialInventory);
+  const { toast } = useToast();
+
+  function handleSaveItem(data: FormData) {
+    if (data.id) { // Update
+      setInventory(prev => prev.map(item => item.id === data.id ? { ...item, ...data } as InventoryItem : item));
+    } else { // Create
+      const categoryPrefix = data.category.charAt(0).toUpperCase();
+      const newId = `${categoryPrefix}-${String(inventory.filter(i => i.category === data.category).length + 1).padStart(3, '0')}`;
+      const newItem: InventoryItem = {
+        ...data,
+        id: newId,
+      };
+      setInventory(prev => [...prev, newItem]);
+    }
+  }
+
+  function handleDeleteItem(itemId: string) {
+    setInventory(prev => prev.filter(item => item.id !== itemId));
+    toast({
+      title: "Item Deleted",
+      description: "The item has been removed from the inventory.",
+      variant: "destructive",
+    });
+  }
+
   return (
     <>
       <PageHeader title="Stock & Supplies" description="Manage your inventory of feed, medicine, and equipment.">
-        <Button>Add Item</Button>
+        <InventoryFormDialog mode="add" onSave={handleSaveItem}>
+          <Button>Add Item</Button>
+        </InventoryFormDialog>
       </PageHeader>
       
       <div className="bg-card rounded-lg border shadow-sm">
@@ -37,6 +285,7 @@ export default function InventoryPage() {
               <TableHead className="text-right">Quantity</TableHead>
               <TableHead className="w-[200px]">Stock Level</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -59,6 +308,33 @@ export default function InventoryPage() {
                     ) : (
                       <Badge variant="default">In Stock</Badge>
                     )}
+                  </TableCell>
+                   <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <InventoryFormDialog mode="edit" initialData={item} onSave={handleSaveItem}>
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            <span>Edit</span>
+                          </DropdownMenuItem>
+                        </InventoryFormDialog>
+                        <DeleteItemAlert
+                          itemName={item.name}
+                          onDelete={() => handleDeleteItem(item.id)}
+                        >
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                             <Trash2 className="mr-2 h-4 w-4" />
+                             <span>Delete</span>
+                          </DropdownMenuItem>
+                        </DeleteItemAlert>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               );
