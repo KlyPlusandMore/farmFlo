@@ -106,20 +106,20 @@ function AnimalFormDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-             <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Animal Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Bessie" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <div className="grid grid-cols-2 gap-4">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Animal Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Bessie" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                <FormField
                   control={form.control}
                   name="species"
@@ -157,9 +157,6 @@ function AnimalFormDialog({
                     </FormItem>
                   )}
                 />
-              </div>
-
-            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="age"
