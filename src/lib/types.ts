@@ -47,3 +47,24 @@ export type Transaction = {
   type: "Income" | "Expense";
   amount: number;
 };
+
+export interface InvoiceLineItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
+export interface Invoice {
+  id: string;
+  clientName: string;
+  clientEmail: string;
+  issueDate: string;
+  dueDate: string;
+  lineItems: InvoiceLineItem[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  status: "Draft" | "Sent" | "Paid" | "Overdue";
+}

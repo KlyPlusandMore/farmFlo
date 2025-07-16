@@ -33,7 +33,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import type { Animal, Species, Transaction } from "@/lib/types";
+import type { Animal, Species } from "@/lib/types";
 import { CowIcon, PigIcon, GoatIcon } from "@/components/icons";
 import { Bird, Rabbit, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -64,6 +64,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAccounting } from "@/hooks/use-accounting";
+import { useInvoices } from "@/hooks/use-invoices";
 
 
 const initialAnimals: Animal[] = [
@@ -312,6 +313,7 @@ function DeleteAnimalAlert({
 export default function AnimalsPage() {
   const [animals, setAnimals] = useState<Animal[]>(initialAnimals);
   const { addTransaction } = useAccounting();
+  const { addInvoice } = useInvoices();
   const { toast } = useToast();
 
   function handleSaveAnimal(data: FormData) {
@@ -319,7 +321,7 @@ export default function AnimalsPage() {
       const originalAnimal = animals.find(a => a.id === data.id);
       setAnimals(prev => prev.map(animal => animal.id === data.id ? { ...animal, ...data } as Animal : animal));
       
-      // If status changed to 'Sold' and salePrice is available, add transaction
+      // If status changed to 'Sold' and salePrice is available, add transaction & invoice
       if (data.status === 'Sold' && originalAnimal?.status !== 'Sold' && data.salePrice) {
         addTransaction({
             date: new Date().toISOString().split('T')[0],
@@ -331,6 +333,26 @@ export default function AnimalsPage() {
         toast({
             title: "Income Recorded",
             description: `Sale of ${data.name} for €${data.salePrice} added to accounting.`,
+        });
+
+        // Add a draft invoice
+        const newInvoice = addInvoice({
+          clientName: 'To Be Determined',
+          clientEmail: 'client@example.com',
+          issueDate: new Date().toISOString().split("T")[0],
+          dueDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split("T")[0],
+          lineItems: [{
+            id: '1',
+            description: `Meat from ${data.name} (${data.id})`,
+            quantity: data.weight, // Using animal weight as an example quantity
+            unitPrice: data.salePrice / data.weight,
+            total: data.salePrice
+          }],
+          status: 'Draft'
+        });
+        toast({
+            title: "Draft Invoice Created",
+            description: `Invoice ${newInvoice.id} has been created. Please complete it in the Invoices section.`,
         });
       }
 

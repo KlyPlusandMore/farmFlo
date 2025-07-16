@@ -26,11 +26,13 @@ import {
   BrainCircuit,
   Settings,
   CircleDollarSign,
+  FileText,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GoatIcon } from "@/components/icons";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AccountingProvider } from "@/hooks/use-accounting";
+import { InvoicesProvider } from "@/hooks/use-invoices";
 
 
 const navItems = [
@@ -39,6 +41,7 @@ const navItems = [
   { href: "/cycles", icon: LineChart, label: "Cycles" },
   { href: "/inventory", icon: Warehouse, label: "Inventory" },
   { href: "/accounting", icon: CircleDollarSign, label: "Accounting" },
+  { href: "/invoices", icon: FileText, label: "Invoices" },
   { href: "/ai-insights", icon: BrainCircuit, label: "AI Insights" },
   { href: "/reports", icon: LineChart, label: "Reports" },
 ];
@@ -62,7 +65,7 @@ function SidebarItems() {
             <SidebarMenuItem key={item.href}>
               <Link href={item.href}>
                   <SidebarMenuButton
-                    isActive={pathname === item.href}
+                    isActive={pathname.startsWith(item.href) && (item.href !== '/dashboard' || pathname === '/dashboard')}
                     tooltip={item.label}
                   >
                     <item.icon />
@@ -134,9 +137,11 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 export default function AppLayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
     <AccountingProvider>
+      <InvoicesProvider>
         <SidebarProvider>
             <AppLayout>{children}</AppLayout>
         </SidebarProvider>
+      </InvoicesProvider>
     </AccountingProvider>
   )
 }
