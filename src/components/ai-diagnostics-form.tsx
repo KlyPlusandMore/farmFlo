@@ -1,4 +1,4 @@
-
+// This is a new file that replaces ai-insights-form.tsx. The content from that file has been moved here and updated.
 "use client";
 
 import { useState } from "react";
@@ -45,7 +45,10 @@ export default function AiDiagnosticsForm() {
     setIsLoading(true);
     setResult(null);
     try {
-      const response = await generateVehicleDiagnostics(values);
+      const response = await generateVehicleDiagnostics({
+          ...values,
+          issueDescription: values.issueDescription
+      });
       setResult(response);
     } catch (error) {
       console.error("Error generating diagnostics:", error);

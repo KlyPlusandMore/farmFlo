@@ -33,9 +33,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import type { Animal, Species } from "@/lib/types";
-import { CowIcon, PigIcon, GoatIcon } from "@/components/icons";
-import { Bird, Rabbit, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import type { Vehicle, Make } from "@/lib/types";
+import { Car, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -65,30 +64,22 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAccounting } from "@/hooks/use-accounting";
 import { useInvoices } from "@/hooks/use-invoices";
-import { useAnimals } from "@/hooks/use-animals";
+import { useVehicles } from "@/hooks/use-vehicles";
 
-const speciesIcons: Record<Species, React.ElementType> = {
-  Bovine: CowIcon,
-  Porcine: PigIcon,
-  Poultry: Bird,
-  Caprine: GoatIcon,
-  Rabbit: Rabbit,
-};
-
-const statusColors: Record<Animal["status"], "default" | "destructive" | "secondary"> = {
-  Healthy: "default",
-  Sick: "destructive",
+const statusColors: Record<Vehicle["status"], "default" | "destructive" | "secondary"> = {
+  Available: "default",
+  "In Service": "destructive",
   Sold: "secondary",
 };
 
 const formSchema = z.object({
-  id: z.string().optional(),
-  name: z.string().min(1, "Name is required"),
-  species: z.enum(["Bovine", "Porcine", "Poultry", "Caprine", "Rabbit"]),
-  age: z.coerce.number().min(1, "Age is required"),
-  weight: z.coerce.number().min(1, "Weight is required"),
-  lot: z.string().min(1, "Lot is required"),
-  status: z.enum(["Healthy", "Sick", "Sold"]),
+  id: z.string().min(1, "VIN is required"),
+  make: z.enum(["Toyota", "Honda", "Ford", "BMW", "Mercedes"]),
+  model: z.string().min(1, "Model is required"),
+  year: z.coerce.number().min(1900, "Year is required"),
+  mileage: z.coerce.number().min(0, "Mileage is required"),
+  location: z.string().min(1, "Location is required"),
+  status: z.enum(["Available", "In Service", "Sold"]),
   salePrice: z.coerce.number().optional(),
 }).refine(data => {
     if (data.status === 'Sold') {
@@ -103,48 +94,46 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-function AnimalFormDialog({
+function VehicleFormDialog({
   mode,
   initialData,
   children,
 }: {
   mode: "add" | "edit";
-  initialData?: Animal;
+  initialData?: Vehicle;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { addAnimal, updateAnimal } = useAnimals();
+  const { addVehicle, updateVehicle } = useVehicles();
   const { addTransaction } = useAccounting();
   const { addInvoice } = useInvoices();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData || { species: "Bovine", status: "Healthy" },
+    defaultValues: initialData || { make: "Toyota", status: "Available" },
   });
 
   const status = form.watch("status");
 
   function onSave(data: FormData) {
-     if (data.id) { // Update
-      const originalAnimal = initialData;
-      updateAnimal(data as Animal);
+     if (initialData) { // Update
+      const originalVehicle = initialData;
+      updateVehicle(data as Vehicle);
       
-      // If status changed to 'Sold' and salePrice is available, add transaction & invoice
-      if (data.status === 'Sold' && originalAnimal?.status !== 'Sold' && data.salePrice) {
+      if (data.status === 'Sold' && originalVehicle?.status !== 'Sold' && data.salePrice) {
         addTransaction({
             date: new Date().toISOString().split('T')[0],
-            description: `Sale of meat from ${data.name} (${data.id})`,
+            description: `Sale of ${data.make} ${data.model} (${data.id})`,
             category: 'Sale',
             type: 'Income',
             amount: data.salePrice
         });
         toast({
             title: "Income Recorded",
-            description: `Sale of ${data.name} for €${data.salePrice} added to accounting.`,
+            description: `Sale of ${data.make} ${data.model} for €${data.salePrice} added to accounting.`,
         });
 
-        // Add a draft invoice
         const newInvoice = addInvoice({
           clientName: 'To Be Determined',
           clientEmail: 'client@example.com',
@@ -152,9 +141,9 @@ function AnimalFormDialog({
           dueDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split("T")[0],
           lineItems: [{
             id: '1',
-            description: `Meat from ${data.name} (${data.id})`,
-            quantity: data.weight, // Using animal weight as an example quantity
-            unitPrice: data.salePrice / data.weight,
+            description: `Vehicle: ${data.year} ${data.make} ${data.model} (VIN: ${data.id})`,
+            quantity: 1,
+            unitPrice: data.salePrice,
             total: data.salePrice
           }],
           status: 'Draft'
@@ -166,7 +155,7 @@ function AnimalFormDialog({
       }
 
     } else { // Create
-      addAnimal(data as Omit<Animal, 'id'>);
+      addVehicle(data as Omit<Vehicle, 'id'>);
     }
   }
 
@@ -174,73 +163,88 @@ function AnimalFormDialog({
   function onSubmit(values: FormData) {
     onSave(values);
     toast({
-      title: `Animal ${mode === "add" ? "Added" : "Updated"}`,
-      description: `${values.name} has been successfully ${mode === "add" ? "added" : "updated"}.`,
+      title: `Vehicle ${mode === "add" ? "Added" : "Updated"}`,
+      description: `${values.make} ${values.model} has been successfully ${mode === "add" ? "added" : "updated"}.`,
     });
     setOpen(false);
     if (mode === "add") {
-      form.reset({ species: "Bovine", status: "Healthy" });
+      form.reset({ make: "Toyota", status: "Available" });
     }
   }
   
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{mode === "add" ? "Add New Animal" : "Edit Animal"}</DialogTitle>
+          <DialogTitle>{mode === "add" ? "Add New Vehicle" : "Edit Vehicle"}</DialogTitle>
           <DialogDescription>
-            {mode === 'add' ? "Enter the details of the new animal." : `Editing details for ${initialData?.name}.`}
+            {mode === 'add' ? "Enter the details of the new vehicle." : `Editing details for ${initialData?.make} ${initialData?.model}.`}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="name"
+              name="id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>VIN</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Bessie" {...field} />
+                    <Input placeholder="Vehicle Identification Number" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="species"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Species</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a species" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Bovine">Bovine</SelectItem>
-                      <SelectItem value="Porcine">Porcine</SelectItem>
-                      <SelectItem value="Poultry">Poultry</SelectItem>
-                      <SelectItem value="Caprine">Caprine</SelectItem>
-                      <SelectItem value="Rabbit">Rabbit</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+             <div className="grid grid-cols-2 gap-4">
+                 <FormField
+                  control={form.control}
+                  name="make"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Make</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a make" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Toyota">Toyota</SelectItem>
+                          <SelectItem value="Honda">Honda</SelectItem>
+                          <SelectItem value="Ford">Ford</SelectItem>
+                          <SelectItem value="BMW">BMW</SelectItem>
+                          <SelectItem value="Mercedes">Mercedes</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="model"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Model</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Camry" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="age"
+                name="year"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Age (mths)</FormLabel>
+                    <FormLabel>Year</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="e.g., 24" {...field} />
+                      <Input type="number" placeholder="e.g., 2022" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -248,12 +252,12 @@ function AnimalFormDialog({
               />
               <FormField
                 control={form.control}
-                name="weight"
+                name="mileage"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Weight (kg)</FormLabel>
+                    <FormLabel>Mileage (km)</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="e.g., 650" {...field} />
+                      <Input type="number" placeholder="e.g., 50000" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -262,12 +266,12 @@ function AnimalFormDialog({
             </div>
             <FormField
               control={form.control}
-              name="lot"
+              name="location"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Lot</FormLabel>
+                  <FormLabel>Location</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., A1" {...field} />
+                    <Input placeholder="e.g., Lot A" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -286,8 +290,8 @@ function AnimalFormDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Healthy">Healthy</SelectItem>
-                        <SelectItem value="Sick">Sick</SelectItem>
+                        <SelectItem value="Available">Available</SelectItem>
+                        <SelectItem value="In Service">In Service</SelectItem>
                         <SelectItem value="Sold">Sold</SelectItem>
                       </SelectContent>
                     </Select>
@@ -303,7 +307,7 @@ function AnimalFormDialog({
                     <FormItem>
                         <FormLabel>Sale Price (€)</FormLabel>
                         <FormControl>
-                        <Input type="number" placeholder="e.g., 1200" {...field} />
+                        <Input type="number" placeholder="e.g., 25000" {...field} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -320,12 +324,12 @@ function AnimalFormDialog({
   );
 }
 
-function DeleteAnimalAlert({
-  animalName,
+function DeleteVehicleAlert({
+  vehicleName,
   onDelete,
   children,
 }: {
-  animalName: string;
+  vehicleName: string;
   onDelete: () => void;
   children: React.ReactNode;
 }) {
@@ -336,7 +340,7 @@ function DeleteAnimalAlert({
         <AlertDialogHeader>
           <AlertDialogTitle>Are you sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete {animalName} from the records.
+            This action cannot be undone. This will permanently delete {vehicleName} from the records.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -348,87 +352,86 @@ function DeleteAnimalAlert({
   );
 }
 
-function AnimalsPageContent() {
-  const { animals, deleteAnimal } = useAnimals();
+function VehiclesPageContent() {
+  const { vehicles, deleteVehicle } = useVehicles();
   const { toast } = useToast();
   const searchParams = useSearchParams();
-  const speciesFilter = searchParams.get("species");
-  const lotFilter = searchParams.get("lot");
+  const makeFilter = searchParams.get("make");
+  const locationFilter = searchParams.get("location");
 
-  const filteredAnimals = useMemo(() => {
-    return animals.filter(animal => {
-      const speciesMatch = !speciesFilter || animal.species === speciesFilter;
-      const lotMatch = !lotFilter || animal.lot === lotFilter;
-      return speciesMatch && lotMatch;
+  const filteredVehicles = useMemo(() => {
+    return vehicles.filter(vehicle => {
+      const makeMatch = !makeFilter || vehicle.make === makeFilter;
+      const locationMatch = !locationFilter || vehicle.location === locationFilter;
+      return makeMatch && locationMatch;
     });
-  }, [animals, speciesFilter, lotFilter]);
+  }, [vehicles, makeFilter, locationFilter]);
 
-  function handleDeleteAnimal(animalId: string) {
-    deleteAnimal(animalId);
+  function handleDeleteVehicle(vehicleId: string) {
+    deleteVehicle(vehicleId);
     toast({
-      title: "Animal Deleted",
-      description: "The animal has been removed from the list.",
+      title: "Vehicle Deleted",
+      description: "The vehicle has been removed from the list.",
       variant: "destructive",
     });
   }
   
   const pageTitle = useMemo(() => {
-    if (speciesFilter) return `${speciesFilter} Management`;
-    if (lotFilter) return `Lot ${lotFilter} Animals`;
-    return "Animal Management";
-  }, [speciesFilter, lotFilter]);
+    if (makeFilter) return `${makeFilter} Vehicle Management`;
+    if (locationFilter) return `Location ${locationFilter} Vehicles`;
+    return "Vehicle Management";
+  }, [makeFilter, locationFilter]);
 
   const pageDescription = useMemo(() => {
-    if (speciesFilter) return `View and manage all ${speciesFilter}.`;
-    if (lotFilter) return `View and manage all animals in lot ${lotFilter}.`;
-    return "View and manage all animals in your farm.";
-  }, [speciesFilter, lotFilter]);
+    if (makeFilter) return `View and manage all ${makeFilter} vehicles.`;
+    if (locationFilter) return `View and manage all vehicles at location ${locationFilter}.`;
+    return "View and manage all vehicles in your inventory.";
+  }, [makeFilter, locationFilter]);
 
 
   return (
     <>
       <PageHeader title={pageTitle} description={pageDescription}>
-        <AnimalFormDialog mode="add">
-          <Button>Add Animal</Button>
-        </AnimalFormDialog>
+        <VehicleFormDialog mode="add">
+          <Button>Add Vehicle</Button>
+        </VehicleFormDialog>
       </PageHeader>
       
       <div className="bg-card rounded-lg border shadow-sm">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Species</TableHead>
-              <TableHead>Age (mths)</TableHead>
-              <TableHead>Weight (kg)</TableHead>
-              <TableHead>Lot</TableHead>
+              <TableHead>VIN</TableHead>
+              <TableHead>Make</TableHead>
+              <TableHead>Model</TableHead>
+              <TableHead>Year</TableHead>
+              <TableHead>Mileage (km)</TableHead>
+              <TableHead>Location</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Sale Price</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredAnimals.map((animal) => {
-              const Icon = speciesIcons[animal.species];
+            {filteredVehicles.map((vehicle) => {
               return (
-                <TableRow key={animal.id}>
-                  <TableCell className="font-medium">{animal.id}</TableCell>
-                  <TableCell>{animal.name}</TableCell>
+                <TableRow key={vehicle.id}>
+                  <TableCell className="font-medium">{vehicle.id}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Icon className="h-5 w-5 text-muted-foreground" />
-                      {animal.species}
+                      <Car className="h-5 w-5 text-muted-foreground" />
+                      {vehicle.make}
                     </div>
                   </TableCell>
-                  <TableCell>{animal.age}</TableCell>
-                  <TableCell>{animal.weight}</TableCell>
-                  <TableCell>{animal.lot}</TableCell>
+                  <TableCell>{vehicle.model}</TableCell>
+                  <TableCell>{vehicle.year}</TableCell>
+                  <TableCell>{vehicle.mileage.toLocaleString()}</TableCell>
+                  <TableCell>{vehicle.location}</TableCell>
                   <TableCell>
-                    <Badge variant={statusColors[animal.status]}>{animal.status}</Badge>
+                    <Badge variant={statusColors[vehicle.status]}>{vehicle.status}</Badge>
                   </TableCell>
                   <TableCell>
-                    {animal.salePrice ? `€${animal.salePrice.toFixed(2)}` : 'N/A'}
+                    {vehicle.salePrice ? `€${vehicle.salePrice.toFixed(2)}` : 'N/A'}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -439,21 +442,21 @@ function AnimalsPageContent() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <AnimalFormDialog mode="edit" initialData={animal}>
+                        <VehicleFormDialog mode="edit" initialData={vehicle}>
                           <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                             <Pencil className="mr-2 h-4 w-4" />
                             <span>Edit</span>
                           </DropdownMenuItem>
-                        </AnimalFormDialog>
-                        <DeleteAnimalAlert
-                          animalName={animal.name}
-                          onDelete={() => handleDeleteAnimal(animal.id)}
+                        </VehicleFormDialog>
+                        <DeleteVehicleAlert
+                          vehicleName={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                          onDelete={() => handleDeleteVehicle(vehicle.id)}
                         >
                           <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
                              <Trash2 className="mr-2 h-4 w-4" />
                              <span>Delete</span>
                           </DropdownMenuItem>
-                        </DeleteAnimalAlert>
+                        </DeleteVehicleAlert>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -467,10 +470,10 @@ function AnimalsPageContent() {
   );
 }
 
-export default function AnimalsPage() {
+export default function VehiclesPage() {
     return (
         <Suspense fallback={<div>Loading...</div>}>
-            <AnimalsPageContent />
+            <VehiclesPageContent />
         </Suspense>
     )
 }

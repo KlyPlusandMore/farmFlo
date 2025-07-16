@@ -30,7 +30,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import type { InventoryItem } from "@/lib/types";
@@ -67,18 +66,17 @@ import { useAccounting } from "@/hooks/use-accounting";
 
 
 const initialInventory: InventoryItem[] = [
-  { id: "F-001", name: "Corn Feed", category: "Feed", quantity: 500, unit: "kg", lowStockThreshold: 100 },
-  { id: "F-002", name: "Soybean Meal", category: "Feed", quantity: 80, unit: "kg", lowStockThreshold: 150 },
-  { id: "M-001", name: "Ivermectin", category: "Medicine", quantity: 20, unit: "bottles", lowStockThreshold: 10 },
-  { id: "M-002", name: "Penicillin", category: "Medicine", quantity: 5, unit: "bottles", lowStockThreshold: 5 },
-  { id: "E-001", name: "Syringes", category: "Equipment", quantity: 250, unit: "units", lowStockThreshold: 50 },
-  { id: "E-002", name: "Heat Lamps", category: "Equipment", quantity: 8, unit: "units", lowStockThreshold: 4 },
+  { id: "EP-001", name: "Spark Plugs", category: "Engine Part", quantity: 100, unit: "units", lowStockThreshold: 20 },
+  { id: "BP-001", name: "Brake Pads", category: "Brake Part", quantity: 40, unit: "sets", lowStockThreshold: 10 },
+  { id: "F-001", name: "Engine Oil 5W-30", category: "Fluid", quantity: 50, unit: "liters", lowStockThreshold: 15 },
+  { id: "SP-001", name: "Shock Absorber", category: "Suspension Part", quantity: 12, unit: "units", lowStockThreshold: 4 },
+  { id: "T-001", name: "Wrench Set", category: "Tool", quantity: 5, unit: "sets", lowStockThreshold: 2 },
 ];
 
 const formSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "Name is required"),
-  category: z.enum(["Feed", "Medicine", "Equipment"]),
+  category: z.enum(["Engine Part", "Brake Part", "Suspension Part", "Fluid", "Tool"]),
   quantity: z.coerce.number().min(0, "Quantity cannot be negative"),
   unit: z.string().min(1, "Unit is required"),
   lowStockThreshold: z.coerce.number().min(0, "Threshold cannot be negative"),
@@ -102,7 +100,7 @@ function InventoryFormDialog({
   const { toast } = useToast();
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData || { category: "Feed", quantity: 0, lowStockThreshold: 10 },
+    defaultValues: initialData || { category: "Engine Part", quantity: 0, lowStockThreshold: 10 },
   });
 
   function onSubmit(values: FormData) {
@@ -115,7 +113,7 @@ function InventoryFormDialog({
     if (mode === "add") {
       form.reset({
         name: "",
-        category: "Feed",
+        category: "Engine Part",
         quantity: 0,
         unit: "",
         lowStockThreshold: 10,
@@ -143,7 +141,7 @@ function InventoryFormDialog({
                 <FormItem>
                   <FormLabel>Item Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Corn Feed" {...field} />
+                    <Input placeholder="e.g., Spark Plugs" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -162,9 +160,11 @@ function InventoryFormDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Feed">Feed</SelectItem>
-                      <SelectItem value="Medicine">Medicine</SelectItem>
-                      <SelectItem value="Equipment">Equipment</SelectItem>
+                      <SelectItem value="Engine Part">Engine Part</SelectItem>
+                      <SelectItem value="Brake Part">Brake Part</SelectItem>
+                      <SelectItem value="Suspension Part">Suspension Part</SelectItem>
+                      <SelectItem value="Fluid">Fluid</SelectItem>
+                      <SelectItem value="Tool">Tool</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -179,7 +179,7 @@ function InventoryFormDialog({
                   <FormItem>
                     <FormLabel>Quantity</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="e.g., 500" {...field} />
+                      <Input type="number" placeholder="e.g., 100" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -192,7 +192,7 @@ function InventoryFormDialog({
                   <FormItem>
                     <FormLabel>Unit</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., kg" {...field} />
+                      <Input placeholder="e.g., units" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -219,7 +219,7 @@ function InventoryFormDialog({
                 <FormItem>
                   <FormLabel>Low Stock Threshold</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="e.g., 100" {...field} />
+                    <Input type="number" placeholder="e.g., 20" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -291,7 +291,7 @@ export default function InventoryPage() {
       }
 
     } else { // Create
-      const categoryPrefix = data.category.charAt(0).toUpperCase();
+      const categoryPrefix = data.category.split(" ").map(s => s.charAt(0)).join("").toUpperCase();
       const newId = `${categoryPrefix}-${String(inventory.filter(i => i.category === data.category).length + 1).padStart(3, '0')}`;
       const newItem: InventoryItem = {
         ...data,
@@ -325,7 +325,7 @@ export default function InventoryPage() {
 
   return (
     <>
-      <PageHeader title="Stock & Supplies" description="Manage your inventory of feed, medicine, and equipment.">
+      <PageHeader title="Parts & Supplies" description="Manage your inventory of parts, fluids, and tools.">
         <InventoryFormDialog mode="add" onSave={handleSaveItem}>
           <Button>Add Item</Button>
         </InventoryFormDialog>

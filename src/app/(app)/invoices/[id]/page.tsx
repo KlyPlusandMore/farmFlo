@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -6,7 +7,7 @@ import { useInvoices } from "@/hooks/use-invoices";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Printer, X } from "lucide-react";
+import { Printer, X, Car } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -16,7 +17,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { GoatIcon } from "@/components/icons";
 import type { Invoice } from "@/lib/types";
 
 const statusColors: Record<Invoice["status"], "default" | "secondary" | "destructive" | "outline"> = {
@@ -64,10 +64,10 @@ export default function InvoiceDetailPage() {
         <CardHeader className="p-2 sm:p-4">
             <div className="flex flex-col sm:flex-row items-start justify-between">
                 <div className="flex items-center gap-4 mb-4 sm:mb-0">
-                    <GoatIcon className="h-12 w-12 text-primary" />
+                    <Car className="h-12 w-12 text-primary" />
                     <div>
-                        <h1 className="text-2xl font-bold font-headline">FarmFlow</h1>
-                        <p className="text-muted-foreground">123 Farm Road, Countryside</p>
+                        <h1 className="text-2xl font-bold font-headline">KPM Autocar</h1>
+                        <p className="text-muted-foreground">123 Autocar Road, Cityville</p>
                     </div>
                 </div>
                 <div className="text-right">

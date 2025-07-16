@@ -12,13 +12,13 @@ interface AccountingContextType {
 const AccountingContext = createContext<AccountingContextType | undefined>(undefined);
 
 const initialTransactions: Transaction[] = [
-  { id: "T-001", date: "2023-07-10", description: "Sale of meat from Billy (G-001)", category: "Sale", type: "Income", amount: 150 },
-  { id: "T-002", date: "2023-07-05", description: "Purchase Corn Feed", category: "Feed", type: "Expense", amount: 300 },
-  { id: "T-003", date: "2023-07-02", description: "Purchase Ivermectin", category: "Medicine", type: "Expense", amount: 75 },
+  { id: "T-001", date: "2023-07-10", description: "Sale of 2019 BMW X5", category: "Sale", type: "Income", amount: 35000 },
+  { id: "T-002", date: "2023-07-05", description: "Purchase Brake Pads", category: "Brake Part", type: "Expense", amount: 300 },
+  { id: "T-003", date: "2023-07-02", description: "Purchase Engine Oil", category: "Fluid", type: "Expense", amount: 75 },
 ];
 
 export const AccountingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
@@ -26,9 +26,12 @@ export const AccountingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const item = window.localStorage.getItem('transactions');
       if (item) {
         setTransactions(JSON.parse(item));
+      } else {
+        setTransactions(initialTransactions);
       }
     } catch (error) {
       console.error(error);
+      setTransactions(initialTransactions);
     }
     setIsInitialized(true);
   }, []);

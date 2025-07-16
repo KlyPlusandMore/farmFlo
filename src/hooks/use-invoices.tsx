@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -18,16 +19,16 @@ const InvoicesContext = createContext<InvoicesContextType | undefined>(undefined
 const initialInvoices: Invoice[] = [
     {
       id: "INV-001",
-      clientName: "Local Butcher Shop",
-      clientEmail: "butcher@local.com",
+      clientName: "Local Car Dealer",
+      clientEmail: "dealer@local.com",
       issueDate: "2023-07-10",
       dueDate: "2023-08-09",
       lineItems: [
-        { id: "1", description: "Sale of meat from Billy (G-001)", quantity: 1, unitPrice: 150, total: 150 }
+        { id: "1", description: "Sale of 2019 BMW X5 (VIN004)", quantity: 1, unitPrice: 35000, total: 35000 }
       ],
-      subtotal: 150,
-      tax: 30, // Example tax
-      total: 180,
+      subtotal: 35000,
+      tax: 7000, // Example tax
+      total: 42000,
       status: "Paid",
     },
 ];

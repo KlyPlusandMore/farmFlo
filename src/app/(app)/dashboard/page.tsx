@@ -6,47 +6,46 @@ import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Bird, Rabbit, Users, TrendingUp, DollarSign } from "lucide-react";
+import { Car, Users, TrendingUp, DollarSign } from "lucide-react";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
-import { CowIcon, GoatIcon, PigIcon } from "@/components/icons";
-import { useAnimals } from "@/hooks/use-animals";
+import { useVehicles } from "@/hooks/use-vehicles";
 import { useAccounting } from "@/hooks/use-accounting";
 
-const weightData = [
-  { month: "Jan", weight: 65 },
-  { month: "Feb", weight: 72 },
-  { month: "Mar", weight: 80 },
-  { month: "Apr", weight: 85 },
-  { month: "May", weight: 92 },
-  { month: "Jun", weight: 101 },
+const mileageData = [
+  { month: "Jan", mileage: 65000 },
+  { month: "Feb", mileage: 72000 },
+  { month: "Mar", mileage: 80000 },
+  { month: "Apr", mileage: 85000 },
+  { month: "May", mileage: 92000 },
+  { month: "Jun", mileage: 101000 },
 ];
 
 const chartConfig = {
-  weight: {
-    label: "Weight (kg)",
+  mileage: {
+    label: "Mileage (km)",
     color: "hsl(var(--chart-1))",
   },
-  Bovine: { label: "Bovine", color: "hsl(var(--chart-1))" },
-  Porcine: { label: "Porcine", color: "hsl(var(--chart-2))" },
-  Poultry: { label: "Poultry", color: "hsl(var(--chart-3))" },
-  Caprine: { label: "Caprine", color: "hsl(var(--chart-4))" },
-  Rabbit: { label: "Rabbit", color: "hsl(var(--chart-5))" },
+  Toyota: { label: "Toyota", color: "hsl(var(--chart-1))" },
+  Honda: { label: "Honda", color: "hsl(var(--chart-2))" },
+  Ford: { label: "Ford", color: "hsl(var(--chart-3))" },
+  BMW: { label: "BMW", color: "hsl(var(--chart-4))" },
+  Mercedes: { label: "Mercedes", color: "hsl(var(--chart-5))" },
 };
 
-const speciesLinks = [
-  { species: 'Bovine', icon: CowIcon, href: '/animals?species=Bovine' },
-  { species: 'Porcine', icon: PigIcon, href: '/animals?species=Porcine' },
-  { species: 'Poultry', icon: Bird, href: '/animals?species=Poultry' },
-  { species: 'Caprine', icon: GoatIcon, href: '/animals?species=Caprine' },
-  { species: 'Rabbit', icon: Rabbit, href: '/animals?species=Rabbit' },
+const makeLinks = [
+  { make: 'Toyota', icon: Car, href: '/vehicles?make=Toyota' },
+  { make: 'Honda', icon: Car, href: '/vehicles?make=Honda' },
+  { make: 'Ford', icon: Car, href: '/vehicles?make=Ford' },
+  { make: 'BMW', icon: Car, href: '/vehicles?make=BMW' },
+  { make: 'Mercedes', icon: Car, href: '/vehicles?make=Mercedes' },
 ]
 
 export default function DashboardPage() {
-  const { animals } = useAnimals();
+  const { vehicles } = useVehicles();
   const { transactions } = useAccounting();
 
-  const totalAnimals = animals.length;
-  const activeAnimals = animals.filter(a => a.status !== 'Sold').length;
+  const totalVehicles = vehicles.length;
+  const availableVehicles = vehicles.filter(a => a.status !== 'Sold').length;
 
   const { totalRevenue, totalExpenses } = useMemo(() => {
     const totalRevenue = transactions
@@ -58,33 +57,33 @@ export default function DashboardPage() {
     return { totalRevenue, totalExpenses };
   }, [transactions]);
 
-  const animalData = useMemo(() => {
-    const speciesCounts = animals.reduce((acc, animal) => {
-        acc[animal.species] = (acc[animal.species] || 0) + 1;
+  const vehicleData = useMemo(() => {
+    const makeCounts = vehicles.reduce((acc, vehicle) => {
+        acc[vehicle.make] = (acc[vehicle.make] || 0) + 1;
         return acc;
     }, {} as Record<string, number>);
 
-    return Object.entries(speciesCounts).map(([species, count]) => ({
-      species,
+    return Object.entries(makeCounts).map(([make, count]) => ({
+      make,
       count,
-      fill: `var(--color-${species})`
+      fill: `var(--color-${make})`
     }));
-  }, [animals]);
+  }, [vehicles]);
 
 
   return (
     <>
-      <PageHeader title="Dashboard" description="Welcome back, here is a summary of your farm." />
+      <PageHeader title="Dashboard" description="Welcome back, here is a summary of your auto-car business." />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Animals</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Vehicles</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeAnimals}</div>
-            <p className="text-xs text-muted-foreground">{totalAnimals} animals in total</p>
+            <div className="text-2xl font-bold">{availableVehicles}</div>
+            <p className="text-xs text-muted-foreground">{totalVehicles} vehicles in total</p>
           </CardContent>
         </Card>
         <Card>
@@ -109,12 +108,12 @@ export default function DashboardPage() {
         </Card>
          <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Production Yield</CardTitle>
+            <CardTitle className="text-sm font-medium">Recent Sales</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,204 L</div>
-            <p className="text-xs text-muted-foreground">Milk production this week</p>
+            <div className="text-2xl font-bold">3</div>
+            <p className="text-xs text-muted-foreground">Vehicles sold this month</p>
           </CardContent>
         </Card>
       </div>
@@ -122,13 +121,13 @@ export default function DashboardPage() {
       <div className="grid gap-4 mt-6 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4">
           <CardHeader>
-            <CardTitle>Animals by Species</CardTitle>
+            <CardTitle>Vehicles by Make</CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-              <BarChart data={animalData} accessibilityLayer>
+              <BarChart data={vehicleData} accessibilityLayer>
                 <CartesianGrid vertical={false} />
-                <XAxis dataKey="species" tickLine={false} tickMargin={10} axisLine={false} />
+                <XAxis dataKey="make" tickLine={false} tickMargin={10} axisLine={false} />
                 <Tooltip cursor={false} content={<ChartTooltipContent />} />
                 <Bar dataKey="count" radius={8} />
               </BarChart>
@@ -137,16 +136,16 @@ export default function DashboardPage() {
         </Card>
         <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle>Average Weight Growth (Bovins)</CardTitle>
+            <CardTitle>Average Mileage Trend</CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-                <LineChart data={weightData} accessibilityLayer margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
+                <LineChart data={mileageData} accessibilityLayer margin={{ top: 5, right: 20, left: -10, bottom: 0 }}>
                     <CartesianGrid vertical={false} />
                     <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
                     <YAxis tickLine={false} axisLine={false} tickMargin={8} />
                     <Tooltip cursor={false} content={<ChartTooltipContent />} />
-                    <Line type="monotone" dataKey="weight" stroke="var(--color-weight)" strokeWidth={2} dot={true} />
+                    <Line type="monotone" dataKey="mileage" stroke="var(--color-mileage)" strokeWidth={2} dot={true} />
                 </LineChart>
             </ChartContainer>
           </CardContent>
@@ -155,14 +154,14 @@ export default function DashboardPage() {
 
        <Card className="mt-6">
           <CardHeader>
-            <CardTitle>Quick Access Species</CardTitle>
+            <CardTitle>Quick Access Makes</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {speciesLinks.map(({ species, icon: Icon, href }) => (
-                <Link key={species} href={href}>
+            {makeLinks.map(({ make, icon: Icon, href }) => (
+                <Link key={make} href={href}>
                     <div className="flex flex-col items-center gap-2 p-4 border rounded-lg hover:bg-card-hover cursor-pointer transition-colors">
                         <Icon className="h-10 w-10 text-primary"/>
-                        <span className="font-medium">{species}</span>
+                        <span className="font-medium">{make}</span>
                     </div>
                 </Link>
             ))}

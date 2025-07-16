@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -53,7 +53,7 @@ const formSchema = z.object({
   id: z.string().optional(),
   date: z.string().min(1, "Date is required"),
   description: z.string().min(1, "Description is required"),
-  category: z.enum(["Feed", "Medicine", "Equipment", "Other"]),
+  category: z.enum(["Engine Part", "Brake Part", "Suspension Part", "Fluid", "Tool", "Other"]),
   amount: z.coerce.number().positive("Amount must be positive"),
 });
 
@@ -110,7 +110,7 @@ function ExpenseFormDialog({
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Purchase of corn feed" {...field} />
+                    <Input placeholder="e.g., Purchase of brake pads" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -129,9 +129,11 @@ function ExpenseFormDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Feed">Feed</SelectItem>
-                      <SelectItem value="Medicine">Medicine</SelectItem>
-                      <SelectItem value="Equipment">Equipment</SelectItem>
+                      <SelectItem value="Engine Part">Engine Part</SelectItem>
+                      <SelectItem value="Brake Part">Brake Part</SelectItem>
+                      <SelectItem value="Suspension Part">Suspension Part</SelectItem>
+                      <SelectItem value="Fluid">Fluid</SelectItem>
+                      <SelectItem value="Tool">Tool</SelectItem>
                       <SelectItem value="Other">Other</SelectItem>
                     </SelectContent>
                   </Select>
@@ -194,7 +196,7 @@ export default function AccountingPage() {
   
   return (
     <>
-      <PageHeader title="Accounting" description="Track your farm's financial performance.">
+      <PageHeader title="Accounting" description="Track your business's financial performance.">
         <ExpenseFormDialog onSave={addTransaction}>
           <Button>Add Expense</Button>
         </ExpenseFormDialog>

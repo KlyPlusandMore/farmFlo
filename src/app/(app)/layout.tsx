@@ -20,29 +20,29 @@ import {
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
   LayoutDashboard,
-  Rabbit,
-  LineChart,
+  Car,
+  Wrench,
   Warehouse,
   BrainCircuit,
   Settings,
   CircleDollarSign,
   FileText,
+  LineChart,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { GoatIcon } from "@/components/icons";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AccountingProvider } from "@/hooks/use-accounting";
 import { InvoicesProvider } from "@/hooks/use-invoices";
-import { AnimalsProvider } from "@/hooks/use-animals";
+import { VehiclesProvider } from "@/hooks/use-vehicles";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/animals", icon: Rabbit, label: "Animals" },
-  { href: "/cycles", icon: LineChart, label: "Cycles" },
-  { href: "/inventory", icon: Warehouse, label: "Inventory" },
+  { href: "/vehicles", icon: Car, label: "Vehicles" },
+  { href: "/cycles", icon: Wrench, label: "Service Cycles" },
+  { href: "/inventory", icon: Warehouse, label: "Parts Inventory" },
   { href: "/accounting", icon: CircleDollarSign, label: "Accounting" },
   { href: "/invoices", icon: FileText, label: "Invoices" },
-  { href: "/ai-insights", icon: BrainCircuit, label: "AI Insights" },
+  { href: "/ai-insights", icon: BrainCircuit, label: "AI Diagnostics" },
   { href: "/reports", icon: LineChart, label: "Reports" },
 ];
 
@@ -53,9 +53,9 @@ function SidebarItems() {
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-primary">
-            <GoatIcon className="text-primary-foreground h-6 w-6" />
+            <Car className="text-primary-foreground h-6 w-6" />
           </div>
-          <h1 className="text-2xl font-bold font-headline text-foreground group-data-[state=collapsed]:hidden">FarmFlow</h1>
+          <h1 className="text-2xl font-bold font-headline text-foreground group-data-[state=collapsed]:hidden">KPM Autocar</h1>
           <SidebarTrigger className="ml-auto group-data-[state=collapsed]:hidden" />
         </div>
       </SidebarHeader>
@@ -93,7 +93,7 @@ function SidebarItems() {
                           <AvatarFallback>U</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 overflow-hidden">
-                          <p className="truncate text-sm font-medium">Éleveur</p>
+                          <p className="truncate text-sm font-medium">Manager</p>
                       </div>
                   </div>
               </SidebarMenuButton>
@@ -138,7 +138,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 // Wrap the layout with the provider
 export default function AppLayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <AnimalsProvider>
+    <VehiclesProvider>
       <AccountingProvider>
         <InvoicesProvider>
           <SidebarProvider>
@@ -146,6 +146,6 @@ export default function AppLayoutWrapper({ children }: { children: React.ReactNo
           </SidebarProvider>
         </InvoicesProvider>
       </AccountingProvider>
-    </AnimalsProvider>
+    </VehiclesProvider>
   )
 }

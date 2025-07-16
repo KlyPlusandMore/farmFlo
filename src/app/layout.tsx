@@ -3,8 +3,8 @@ import { Toaster } from "@/components/ui/toaster"
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "FarmFlow",
-  description: "Complete management of breeding cycles, from birth to sale.",
+  title: "KPM Autocar Management System",
+  description: "Complete management of your car inventory, from acquisition to sale.",
 };
 
 export default function RootLayout({
