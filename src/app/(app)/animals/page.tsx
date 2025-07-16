@@ -2,7 +2,8 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -30,7 +31,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import type { Animal, Species } from "@/lib/types";
@@ -348,9 +348,20 @@ function DeleteAnimalAlert({
   );
 }
 
-export default function AnimalsPage() {
+function AnimalsPageContent() {
   const { animals, deleteAnimal } = useAnimals();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const speciesFilter = searchParams.get("species");
+  const lotFilter = searchParams.get("lot");
+
+  const filteredAnimals = useMemo(() => {
+    return animals.filter(animal => {
+      const speciesMatch = !speciesFilter || animal.species === speciesFilter;
+      const lotMatch = !lotFilter || animal.lot === lotFilter;
+      return speciesMatch && lotMatch;
+    });
+  }, [animals, speciesFilter, lotFilter]);
 
   function handleDeleteAnimal(animalId: string) {
     deleteAnimal(animalId);
@@ -360,10 +371,23 @@ export default function AnimalsPage() {
       variant: "destructive",
     });
   }
+  
+  const pageTitle = useMemo(() => {
+    if (speciesFilter) return `${speciesFilter} Management`;
+    if (lotFilter) return `Lot ${lotFilter} Animals`;
+    return "Animal Management";
+  }, [speciesFilter, lotFilter]);
+
+  const pageDescription = useMemo(() => {
+    if (speciesFilter) return `View and manage all ${speciesFilter}.`;
+    if (lotFilter) return `View and manage all animals in lot ${lotFilter}.`;
+    return "View and manage all animals in your farm.";
+  }, [speciesFilter, lotFilter]);
+
 
   return (
     <>
-      <PageHeader title="Animal Management" description="View and manage all animals in your farm.">
+      <PageHeader title={pageTitle} description={pageDescription}>
         <AnimalFormDialog mode="add">
           <Button>Add Animal</Button>
         </AnimalFormDialog>
@@ -385,7 +409,7 @@ export default function AnimalsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {animals.map((animal) => {
+            {filteredAnimals.map((animal) => {
               const Icon = speciesIcons[animal.species];
               return (
                 <TableRow key={animal.id}>
@@ -441,4 +465,12 @@ export default function AnimalsPage() {
       </div>
     </>
   );
+}
+
+export default function AnimalsPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <AnimalsPageContent />
+        </Suspense>
+    )
 }

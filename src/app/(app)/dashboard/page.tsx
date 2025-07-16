@@ -1,19 +1,16 @@
+
 'use client'
 
+import Link from "next/link";
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Bird, Rabbit, Users, TrendingUp, DollarSign } from "lucide-react";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { CowIcon, GoatIcon, PigIcon } from "@/components/icons";
-
-const animalData = [
-  { species: "Bovins", count: 45, fill: "var(--color-bovins)" },
-  { species: "Porcins", count: 120, fill: "var(--color-porcins)" },
-  { species: "Volailles", count: 350, fill: "var(--color-volailles)" },
-  { species: "Caprins", count: 80, fill: "var(--color-caprins)" },
-  { species: "Lapins", count: 200, fill: "var(--color-lapins)" },
-];
+import { useAnimals } from "@/hooks/use-animals";
+import { useAccounting } from "@/hooks/use-accounting";
 
 const weightData = [
   { month: "Jan", weight: 65 },
@@ -29,14 +26,52 @@ const chartConfig = {
     label: "Weight (kg)",
     color: "hsl(var(--chart-1))",
   },
-  bovins: { label: "Bovins", color: "hsl(var(--chart-1))" },
-  porcins: { label: "Porcins", color: "hsl(var(--chart-2))" },
-  volailles: { label: "Volailles", color: "hsl(var(--chart-3))" },
-  caprins: { label: "Caprins", color: "hsl(var(--chart-4))" },
-  lapins: { label: "Lapins", color: "hsl(var(--chart-5))" },
+  Bovine: { label: "Bovine", color: "hsl(var(--chart-1))" },
+  Porcine: { label: "Porcine", color: "hsl(var(--chart-2))" },
+  Poultry: { label: "Poultry", color: "hsl(var(--chart-3))" },
+  Caprine: { label: "Caprine", color: "hsl(var(--chart-4))" },
+  Rabbit: { label: "Rabbit", color: "hsl(var(--chart-5))" },
 };
 
+const speciesLinks = [
+  { species: 'Bovine', icon: CowIcon, href: '/animals?species=Bovine' },
+  { species: 'Porcine', icon: PigIcon, href: '/animals?species=Porcine' },
+  { species: 'Poultry', icon: Bird, href: '/animals?species=Poultry' },
+  { species: 'Caprine', icon: GoatIcon, href: '/animals?species=Caprine' },
+  { species: 'Rabbit', icon: Rabbit, href: '/animals?species=Rabbit' },
+]
+
 export default function DashboardPage() {
+  const { animals } = useAnimals();
+  const { transactions } = useAccounting();
+
+  const totalAnimals = animals.length;
+  const activeAnimals = animals.filter(a => a.status !== 'Sold').length;
+
+  const { totalRevenue, totalExpenses } = useMemo(() => {
+    const totalRevenue = transactions
+      .filter(t => t.type === 'Income')
+      .reduce((sum, t) => sum + t.amount, 0);
+    const totalExpenses = transactions
+      .filter(t => t.type === 'Expense')
+      .reduce((sum, t) => sum + t.amount, 0);
+    return { totalRevenue, totalExpenses };
+  }, [transactions]);
+
+  const animalData = useMemo(() => {
+    const speciesCounts = animals.reduce((acc, animal) => {
+        acc[animal.species] = (acc[animal.species] || 0) + 1;
+        return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(speciesCounts).map(([species, count]) => ({
+      species,
+      count,
+      fill: `var(--color-${species})`
+    }));
+  }, [animals]);
+
+
   return (
     <>
       <PageHeader title="Dashboard" description="Welcome back, here is a summary of your farm." />
@@ -48,28 +83,28 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">795</div>
-            <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+            <div className="text-2xl font-bold">{activeAnimals}</div>
+            <p className="text-xs text-muted-foreground">{totalAnimals} animals in total</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Reproduction Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">87%</div>
-            <p className="text-xs text-muted-foreground">+2% from last cycle</p>
+            <div className="text-2xl font-bold">€{totalRevenue.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">All-time income</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Sales</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">€12,234.50</div>
-            <p className="text-xs text-muted-foreground">+15% from last month</p>
+            <div className="text-2xl font-bold">€{totalExpenses.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">All-time expenses</p>
           </CardContent>
         </Card>
          <Card>
@@ -123,26 +158,14 @@ export default function DashboardPage() {
             <CardTitle>Quick Access Species</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            <div className="flex flex-col items-center gap-2 p-4 border rounded-lg hover:bg-card-hover cursor-pointer transition-colors">
-                <CowIcon className="h-10 w-10 text-primary"/>
-                <span className="font-medium">Bovins</span>
-            </div>
-             <div className="flex flex-col items-center gap-2 p-4 border rounded-lg hover:bg-card-hover cursor-pointer transition-colors">
-                <PigIcon className="h-10 w-10 text-primary"/>
-                <span className="font-medium">Porcins</span>
-            </div>
-             <div className="flex flex-col items-center gap-2 p-4 border rounded-lg hover:bg-card-hover cursor-pointer transition-colors">
-                <Bird className="h-10 w-10 text-primary"/>
-                <span className="font-medium">Volailles</span>
-            </div>
-             <div className="flex flex-col items-center gap-2 p-4 border rounded-lg hover:bg-card-hover cursor-pointer transition-colors">
-                <GoatIcon className="h-10 w-10 text-primary"/>
-                <span className="font-medium">Caprins</span>
-            </div>
-             <div className="flex flex-col items-center gap-2 p-4 border rounded-lg hover:bg-card-hover cursor-pointer transition-colors">
-                <Rabbit className="h-10 w-10 text-primary"/>
-                <span className="font-medium">Lapins</span>
-            </div>
+            {speciesLinks.map(({ species, icon: Icon, href }) => (
+                <Link key={species} href={href}>
+                    <div className="flex flex-col items-center gap-2 p-4 border rounded-lg hover:bg-card-hover cursor-pointer transition-colors">
+                        <Icon className="h-10 w-10 text-primary"/>
+                        <span className="font-medium">{species}</span>
+                    </div>
+                </Link>
+            ))}
           </CardContent>
         </Card>
     </>
