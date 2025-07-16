@@ -33,7 +33,7 @@ import { GoatIcon } from "@/components/icons";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AccountingProvider } from "@/hooks/use-accounting";
 import { InvoicesProvider } from "@/hooks/use-invoices";
-
+import { AnimalsProvider } from "@/hooks/use-animals";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -136,12 +136,14 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 // Wrap the layout with the provider
 export default function AppLayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <AccountingProvider>
-      <InvoicesProvider>
-        <SidebarProvider>
-            <AppLayout>{children}</AppLayout>
-        </SidebarProvider>
-      </InvoicesProvider>
-    </AccountingProvider>
+    <AnimalsProvider>
+      <AccountingProvider>
+        <InvoicesProvider>
+          <SidebarProvider>
+              <AppLayout>{children}</AppLayout>
+          </SidebarProvider>
+        </InvoicesProvider>
+      </AccountingProvider>
+    </AnimalsProvider>
   )
 }

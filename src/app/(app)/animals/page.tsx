@@ -65,17 +65,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAccounting } from "@/hooks/use-accounting";
 import { useInvoices } from "@/hooks/use-invoices";
-
-
-const initialAnimals: Animal[] = [
-  { id: "B-001", name: "Bessie", species: "Bovine", age: 24, weight: 650, lot: "A1", status: "Healthy" },
-  { id: "B-002", name: "Angus", species: "Bovine", age: 36, weight: 720, lot: "A1", status: "Healthy" },
-  { id: "P-001", name: "Porky", species: "Porcine", age: 6, weight: 110, lot: "B2", status: "Healthy" },
-  { id: "P-002", name: "Wilbur", species: "Porcine", age: 7, weight: 125, lot: "B2", status: "Sick" },
-  { id: "C-001", name: "Cluck", species: "Poultry", age: 12, weight: 2, lot: "C3", status: "Healthy" },
-  { id: "G-001", name: "Billy", species: "Caprine", age: 18, weight: 60, lot: "D4", status: "Sold", salePrice: 150 },
-  { id: "R-001", name: "Roger", species: "Rabbit", age: 4, weight: 3, lot: "E5", status: "Healthy" },
-];
+import { useAnimals } from "@/hooks/use-animals";
 
 const speciesIcons: Record<Species, React.ElementType> = {
   Bovine: CowIcon,
@@ -116,22 +106,70 @@ type FormData = z.infer<typeof formSchema>;
 function AnimalFormDialog({
   mode,
   initialData,
-  onSave,
   children,
 }: {
   mode: "add" | "edit";
   initialData?: Animal;
-  onSave: (data: FormData) => void;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const { addAnimal, updateAnimal } = useAnimals();
+  const { addTransaction } = useAccounting();
+  const { addInvoice } = useInvoices();
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData || { species: "Bovine", status: "Healthy" },
   });
 
   const status = form.watch("status");
+
+  function onSave(data: FormData) {
+     if (data.id) { // Update
+      const originalAnimal = initialData;
+      updateAnimal(data as Animal);
+      
+      // If status changed to 'Sold' and salePrice is available, add transaction & invoice
+      if (data.status === 'Sold' && originalAnimal?.status !== 'Sold' && data.salePrice) {
+        addTransaction({
+            date: new Date().toISOString().split('T')[0],
+            description: `Sale of meat from ${data.name} (${data.id})`,
+            category: 'Sale',
+            type: 'Income',
+            amount: data.salePrice
+        });
+        toast({
+            title: "Income Recorded",
+            description: `Sale of ${data.name} for €${data.salePrice} added to accounting.`,
+        });
+
+        // Add a draft invoice
+        const newInvoice = addInvoice({
+          clientName: 'To Be Determined',
+          clientEmail: 'client@example.com',
+          issueDate: new Date().toISOString().split("T")[0],
+          dueDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split("T")[0],
+          lineItems: [{
+            id: '1',
+            description: `Meat from ${data.name} (${data.id})`,
+            quantity: data.weight, // Using animal weight as an example quantity
+            unitPrice: data.salePrice / data.weight,
+            total: data.salePrice
+          }],
+          status: 'Draft'
+        });
+        toast({
+            title: "Draft Invoice Created",
+            description: `Invoice ${newInvoice.id} has been created. Please complete it in the Invoices section.`,
+        });
+      }
+
+    } else { // Create
+      addAnimal(data as Omit<Animal, 'id'>);
+    }
+  }
+
 
   function onSubmit(values: FormData) {
     onSave(values);
@@ -311,64 +349,11 @@ function DeleteAnimalAlert({
 }
 
 export default function AnimalsPage() {
-  const [animals, setAnimals] = useState<Animal[]>(initialAnimals);
-  const { addTransaction } = useAccounting();
-  const { addInvoice } = useInvoices();
+  const { animals, deleteAnimal } = useAnimals();
   const { toast } = useToast();
 
-  function handleSaveAnimal(data: FormData) {
-    if (data.id) { // Update
-      const originalAnimal = animals.find(a => a.id === data.id);
-      setAnimals(prev => prev.map(animal => animal.id === data.id ? { ...animal, ...data } as Animal : animal));
-      
-      // If status changed to 'Sold' and salePrice is available, add transaction & invoice
-      if (data.status === 'Sold' && originalAnimal?.status !== 'Sold' && data.salePrice) {
-        addTransaction({
-            date: new Date().toISOString().split('T')[0],
-            description: `Sale of meat from ${data.name} (${data.id})`,
-            category: 'Sale',
-            type: 'Income',
-            amount: data.salePrice
-        });
-        toast({
-            title: "Income Recorded",
-            description: `Sale of ${data.name} for €${data.salePrice} added to accounting.`,
-        });
-
-        // Add a draft invoice
-        const newInvoice = addInvoice({
-          clientName: 'To Be Determined',
-          clientEmail: 'client@example.com',
-          issueDate: new Date().toISOString().split("T")[0],
-          dueDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split("T")[0],
-          lineItems: [{
-            id: '1',
-            description: `Meat from ${data.name} (${data.id})`,
-            quantity: data.weight, // Using animal weight as an example quantity
-            unitPrice: data.salePrice / data.weight,
-            total: data.salePrice
-          }],
-          status: 'Draft'
-        });
-        toast({
-            title: "Draft Invoice Created",
-            description: `Invoice ${newInvoice.id} has been created. Please complete it in the Invoices section.`,
-        });
-      }
-
-    } else { // Create
-      const speciesPrefix = data.species.charAt(0).toUpperCase();
-      const newId = `${speciesPrefix}-${String(animals.filter(a => a.species === data.species).length + 1).padStart(3, '0')}`;
-      const newAnimal: Animal = {
-        ...data,
-        id: newId,
-      };
-      setAnimals(prev => [...prev, newAnimal]);
-    }
-  }
-
   function handleDeleteAnimal(animalId: string) {
-    setAnimals(prev => prev.filter(animal => animal.id !== animalId));
+    deleteAnimal(animalId);
     toast({
       title: "Animal Deleted",
       description: "The animal has been removed from the list.",
@@ -379,7 +364,7 @@ export default function AnimalsPage() {
   return (
     <>
       <PageHeader title="Animal Management" description="View and manage all animals in your farm.">
-        <AnimalFormDialog mode="add" onSave={handleSaveAnimal}>
+        <AnimalFormDialog mode="add">
           <Button>Add Animal</Button>
         </AnimalFormDialog>
       </PageHeader>
@@ -430,7 +415,7 @@ export default function AnimalsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <AnimalFormDialog mode="edit" initialData={animal} onSave={handleSaveAnimal}>
+                        <AnimalFormDialog mode="edit" initialData={animal}>
                           <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                             <Pencil className="mr-2 h-4 w-4" />
                             <span>Edit</span>

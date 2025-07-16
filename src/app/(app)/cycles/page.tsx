@@ -1,48 +1,66 @@
+
+
+"use client";
+
+import { useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Syringe, Baby, Scale, ShoppingCart, HeartPulse } from "lucide-react";
-import type { ProductionCycle, CycleStep, Species } from "@/lib/types";
+import type { Animal, Species } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { CowIcon, PigIcon } from "@/components/icons";
-
-const cyclesData: ProductionCycle[] = [
-  {
-    id: "C-B-01", lotId: "A1", species: "Bovine", animalCount: 45, startDate: "2023-01-15",
-    steps: [
-      { name: "Birth", icon: Baby, date: "2023-01-15", status: "completed" },
-      { name: "Vaccination 1", icon: Syringe, date: "2023-02-20", status: "completed" },
-      { name: "Weaning", icon: HeartPulse, date: "2023-07-15", status: "active" },
-      { name: "Weight Check", icon: Scale, date: "2023-12-15", status: "pending" },
-      { name: "Sale", icon: ShoppingCart, date: "2024-07-15", status: "pending" },
-    ],
-  },
-  {
-    id: "C-P-02", lotId: "B2", species: "Porcine", animalCount: 120, startDate: "2023-09-01",
-    steps: [
-      { name: "Birth", icon: Baby, date: "2023-09-01", status: "completed" },
-      { name: "Vaccination", icon: Syringe, date: "2023-09-10", status: "completed" },
-      { name: "Weight Check", icon: Scale, date: "2023-11-01", status: "completed" },
-      { name: "Sale", icon: ShoppingCart, date: "2024-03-01", status: "pending" },
-    ],
-  },
-];
+import { CowIcon, PigIcon, GoatIcon } from "@/components/icons";
+import { Bird, Rabbit } from "lucide-react";
+import { useAnimals } from "@/hooks/use-animals";
 
 const speciesIcons: Record<Species, React.ElementType> = {
   Bovine: CowIcon,
   Porcine: PigIcon,
-  Poultry: Baby,
-  Caprine: Baby,
-  Rabbit: Baby,
+  Poultry: Bird,
+  Caprine: GoatIcon,
+  Rabbit: Rabbit,
 };
 
-const statusClasses: Record<CycleStep["status"], string> = {
-    completed: "bg-primary border-primary-foreground text-primary-foreground",
-    active: "bg-accent border-accent-foreground text-accent-foreground animate-pulse",
-    pending: "bg-muted border-muted-foreground/20 text-muted-foreground",
-}
+const statusClasses = {
+  completed: "bg-primary border-primary-foreground text-primary-foreground",
+  active: "bg-accent border-accent-foreground text-accent-foreground animate-pulse",
+  pending: "bg-muted border-muted-foreground/20 text-muted-foreground",
+};
 
 export default function CyclesPage() {
+  const { animals } = useAnimals();
+
+  const productionCycles = useMemo(() => {
+    const lots = animals.reduce<Record<string, Animal[]>>((acc, animal) => {
+      if (animal.status !== 'Sold') {
+          (acc[animal.lot] = acc[animal.lot] || []).push(animal);
+      }
+      return acc;
+    }, {});
+
+    return Object.entries(lots).map(([lotId, lotAnimals]) => {
+      const species = lotAnimals[0]?.species;
+      const animalCount = lotAnimals.length;
+      
+      // Example steps, would need to be dynamic based on real data
+      const steps = [
+        { name: "Birth", icon: Baby, date: "Dynamic", status: "completed" },
+        { name: "Vaccination", icon: Syringe, date: "Dynamic", status: "active" },
+        { name: "Weight Check", icon: Scale, date: "Dynamic", status: "pending" },
+        { name: "Sale", icon: ShoppingCart, date: "Dynamic", status: "pending" },
+      ];
+
+      return {
+        id: `cycle-${lotId}`,
+        lotId,
+        species,
+        animalCount,
+        startDate: "N/A", // This would need to be stored somewhere
+        steps,
+      };
+    });
+  }, [animals]);
+
   return (
     <>
       <PageHeader title="Production Cycles" description="Track the lifecycle of each production lot from birth to sale.">
@@ -50,7 +68,15 @@ export default function CyclesPage() {
       </PageHeader>
 
       <div className="space-y-6">
-        {cyclesData.map((cycle) => {
+        {productionCycles.length === 0 && (
+            <Card>
+                <CardContent className="pt-6">
+                    <p className="text-muted-foreground text-center">No active production cycles. Add animals to lots to see them here.</p>
+                </CardContent>
+            </Card>
+        )}
+        {productionCycles.map((cycle) => {
+          if (!cycle.species) return null;
           const SpeciesIcon = speciesIcons[cycle.species];
           return (
             <Card key={cycle.id}>
