@@ -58,15 +58,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <SidebarMenu>
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton
-                  isActive={pathname === item.href}
-                  tooltip={item.label}
-                >
-                  <Link href={item.href} className="flex items-center gap-2">
+                <Link href={item.href}>
+                  <SidebarMenuButton
+                    isActive={pathname === item.href}
+                    tooltip={item.label}
+                  >
                     <item.icon />
                     <span>{item.label}</span>
-                  </Link>
-                </SidebarMenuButton>
+                  </SidebarMenuButton>
+                </Link>
               </SidebarMenuItem>
             ))}
           </SidebarMenu>
