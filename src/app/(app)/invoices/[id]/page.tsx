@@ -1,12 +1,12 @@
 
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useInvoices } from "@/hooks/use-invoices";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
+import { Printer, X } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -29,6 +29,7 @@ const statusColors: Record<Invoice["status"], "default" | "secondary" | "destruc
 
 export default function InvoiceDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const { getInvoice } = useInvoices();
   const id = typeof params.id === 'string' ? params.id : '';
   const invoice = getInvoice(id);
@@ -52,6 +53,10 @@ export default function InvoiceDetailPage() {
         <Button onClick={handlePrint} variant="outline" className="print:hidden">
             <Printer className="mr-2 h-4 w-4" />
             Print / Save PDF
+        </Button>
+        <Button onClick={() => router.push('/invoices')} variant="outline">
+            <X className="mr-2 h-4 w-4" />
+            Close
         </Button>
       </PageHeader>
       
