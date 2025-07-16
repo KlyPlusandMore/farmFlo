@@ -97,7 +97,7 @@ function AnimalFormDialog({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Start New Cycle by Adding an Animal</DialogTitle>
           <DialogDescription>
@@ -254,7 +254,7 @@ export default function CyclesPage() {
           return (
             <Card key={cycle.id}>
               <CardHeader>
-                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
                     <div>
                         <CardTitle className="flex items-center gap-2">
                           <SpeciesIcon className="h-6 w-6 text-primary" />
