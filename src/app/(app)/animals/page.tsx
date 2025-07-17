@@ -32,7 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import type { Animal, Species } from "@/lib/types";
+import type { Animal } from "@/lib/types";
 import { Rabbit, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -72,7 +72,7 @@ const statusColors: Record<Animal["status"], "default" | "destructive" | "second
 };
 
 const formSchema = z.object({
-  id: z.string().min(1, "ID is required"),
+  id: z.string().optional(),
   name: z.string().min(1, "Name is required"),
   species: z.enum(["Bovine", "Porcine", "Poultry", "Caprine", "Rabbit"]),
   age: z.coerce.number().min(0, "Age is required"),
@@ -476,3 +476,5 @@ export default function AnimalsPage() {
         </Suspense>
     )
 }
+
+    
