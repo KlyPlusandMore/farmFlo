@@ -47,7 +47,6 @@ const statusClasses = {
 };
 
 const formSchema = z.object({
-  id: z.string().optional(),
   name: z.string().min(1, "Name is required"),
   species: z.enum(["Bovine", "Porcine", "Poultry", "Caprine", "Rabbit"]),
   age: z.coerce.number().min(0, "Age is required"),
