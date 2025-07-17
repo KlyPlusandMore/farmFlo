@@ -51,7 +51,7 @@ export const AnimalsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [animals, isInitialized]);
   
-  const getNextId = useCallback((species: string) => {
+  const getNextId = useCallback(() => {
     const prefix = "A";
     const lastIdNum = animals.reduce((maxId, animal) => {
         const idNum = parseInt(animal.id.replace(prefix, '') || '0');
@@ -61,14 +61,14 @@ export const AnimalsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [animals]);
   
   const addAnimal = useCallback((animalData: Omit<Animal, 'id'>) => {
-    const newId = (animalData as any).id || getNextId(animalData.species);
+    const newId = (animalData as any).id || getNextId();
     const newAnimal: Animal = {
       ...animalData,
       id: newId,
     };
     setAnimals(prev => [...prev, newAnimal]);
     return newAnimal;
-  }, [getNextId, animals]);
+  }, [getNextId]);
 
   const updateAnimal = useCallback((updatedAnimal: Animal) => {
     setAnimals(prev => prev.map(animal => animal.id === updatedAnimal.id ? updatedAnimal : animal));
