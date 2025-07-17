@@ -1,22 +1,22 @@
 import type { LucideIcon } from "lucide-react";
 
-export type Make = "Toyota" | "Honda" | "Ford" | "BMW" | "Mercedes";
+export type Species = "Bovine" | "Porcine" | "Poultry" | "Caprine" | "Rabbit";
 
-export interface Vehicle {
-  id: string; // VIN
-  make: Make;
-  model: string;
-  year: number;
-  mileage: number; // in km
-  location: string;
-  status: "Available" | "In Service" | "Sold";
+export interface Animal {
+  id: string;
+  name: string;
+  species: Species;
+  age: number; // in months
+  weight: number; // in kg
+  lot: string;
+  status: "Healthy" | "At Risk" | "Sold";
   salePrice?: number;
 }
 
 export interface InventoryItem {
   id: string;
   name:string;
-  category: "Engine Part" | "Brake Part" | "Suspension Part" | "Fluid" | "Tool";
+  category: "Feed" | "Medication" | "Equipment";
   quantity: number;
   unit: string;
   lowStockThreshold: number;
@@ -30,11 +30,11 @@ export type CycleStep = {
   status: "completed" | "pending" | "active";
 };
 
-export type ServiceCycle = {
+export type ProductionCycle = {
   id: string;
-  locationId: string;
-  make: Make;
-  vehicleCount: number;
+  lotId: string;
+  species: Species;
+  animalCount: number;
   startDate: string;
   steps: CycleStep[];
 };
@@ -43,7 +43,7 @@ export type Transaction = {
   id: string;
   date: string;
   description: string;
-  category: "Sale" | "Engine Part" | "Brake Part" | "Suspension Part" | "Fluid" | "Tool" | "Other";
+  category: "Sale" | "Feed" | "Medication" | "Equipment" | "Other";
   type: "Income" | "Expense";
   amount: number;
 };

@@ -3,8 +3,8 @@ import { Toaster } from "@/components/ui/toaster"
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "KPM Autocar Management System",
-  description: "Complete management of your car inventory, from acquisition to sale.",
+  title: "KPM Farm Management System",
+  description: "Complete management of your farm, from livestock to crops.",
 };
 
 export default function RootLayout({

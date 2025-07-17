@@ -12,9 +12,9 @@ interface AccountingContextType {
 const AccountingContext = createContext<AccountingContextType | undefined>(undefined);
 
 const initialTransactions: Transaction[] = [
-  { id: "T-001", date: "2023-07-10", description: "Sale of 2019 BMW X5", category: "Sale", type: "Income", amount: 35000 },
-  { id: "T-002", date: "2023-07-05", description: "Purchase Brake Pads", category: "Brake Part", type: "Expense", amount: 300 },
-  { id: "T-003", date: "2023-07-02", description: "Purchase Engine Oil", category: "Fluid", type: "Expense", amount: 75 },
+  { id: "T-001", date: "2023-07-10", description: "Sale of Billy the Goat", category: "Sale", type: "Income", amount: 300 },
+  { id: "T-002", date: "2023-07-05", description: "Purchase Bovine Feed", category: "Feed", type: "Expense", amount: 500 },
+  { id: "T-003", date: "2023-07-02", description: "Purchase Antibiotics", category: "Medication", type: "Expense", amount: 75 },
 ];
 
 export const AccountingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

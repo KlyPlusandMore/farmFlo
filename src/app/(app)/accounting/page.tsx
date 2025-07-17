@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -53,7 +52,7 @@ const formSchema = z.object({
   id: z.string().optional(),
   date: z.string().min(1, "Date is required"),
   description: z.string().min(1, "Description is required"),
-  category: z.enum(["Engine Part", "Brake Part", "Suspension Part", "Fluid", "Tool", "Other"]),
+  category: z.enum(["Feed", "Medication", "Equipment", "Other"]),
   amount: z.coerce.number().positive("Amount must be positive"),
 });
 
@@ -110,7 +109,7 @@ function ExpenseFormDialog({
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Purchase of brake pads" {...field} />
+                    <Input placeholder="e.g., Purchase of animal feed" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -129,11 +128,9 @@ function ExpenseFormDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Engine Part">Engine Part</SelectItem>
-                      <SelectItem value="Brake Part">Brake Part</SelectItem>
-                      <SelectItem value="Suspension Part">Suspension Part</SelectItem>
-                      <SelectItem value="Fluid">Fluid</SelectItem>
-                      <SelectItem value="Tool">Tool</SelectItem>
+                      <SelectItem value="Feed">Feed</SelectItem>
+                      <SelectItem value="Medication">Medication</SelectItem>
+                      <SelectItem value="Equipment">Equipment</SelectItem>
                       <SelectItem value="Other">Other</SelectItem>
                     </SelectContent>
                   </Select>
@@ -196,7 +193,7 @@ export default function AccountingPage() {
   
   return (
     <>
-      <PageHeader title="Accounting" description="Track your business's financial performance.">
+      <PageHeader title="Accounting" description="Track your farm's financial performance.">
         <ExpenseFormDialog onSave={addTransaction}>
           <Button>Add Expense</Button>
         </ExpenseFormDialog>

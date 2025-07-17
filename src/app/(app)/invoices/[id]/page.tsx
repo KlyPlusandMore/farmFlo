@@ -7,7 +7,7 @@ import { useInvoices } from "@/hooks/use-invoices";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Printer, X, Car } from "lucide-react";
+import { Printer, X, Rabbit } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -64,10 +64,10 @@ export default function InvoiceDetailPage() {
         <CardHeader className="p-2 sm:p-4">
             <div className="flex flex-col sm:flex-row items-start justify-between">
                 <div className="flex items-center gap-4 mb-4 sm:mb-0">
-                    <Car className="h-12 w-12 text-primary" />
+                    <Rabbit className="h-12 w-12 text-primary" />
                     <div>
-                        <h1 className="text-2xl font-bold font-headline">KPM Autocar</h1>
-                        <p className="text-muted-foreground">123 Autocar Road, Cityville</p>
+                        <h1 className="text-2xl font-bold font-headline">KPM Farm</h1>
+                        <p className="text-muted-foreground">123 Farm Road, Countryside</p>
                     </div>
                 </div>
                 <div className="text-right">

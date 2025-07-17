@@ -19,16 +19,16 @@ const InvoicesContext = createContext<InvoicesContextType | undefined>(undefined
 const initialInvoices: Invoice[] = [
     {
       id: "INV-001",
-      clientName: "Local Car Dealer",
-      clientEmail: "dealer@local.com",
+      clientName: "Local Butcher Shop",
+      clientEmail: "butcher@local.com",
       issueDate: "2023-07-10",
       dueDate: "2023-08-09",
       lineItems: [
-        { id: "1", description: "Sale of 2019 BMW X5 (VIN004)", quantity: 1, unitPrice: 35000, total: 35000 }
+        { id: "1", description: "Sale of Caprine (Billy)", quantity: 1, unitPrice: 300, total: 300 }
       ],
-      subtotal: 35000,
-      tax: 7000, // Example tax
-      total: 42000,
+      subtotal: 300,
+      tax: 60, // Example tax
+      total: 360,
       status: "Paid",
     },
 ];

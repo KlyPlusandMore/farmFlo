@@ -6,38 +6,38 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
-  generateVehicleDiagnostics,
-  type GenerateVehicleDiagnosticsOutput,
-} from "@/ai/flows/generate-vehicle-diagnostics";
+  generatePredictiveAlerts,
+  type GeneratePredictiveAlertsOutput,
+} from "@/ai/flows/generate-predictive-alerts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles, AlertTriangle, Wrench, Euro } from "lucide-react";
+import { Loader2, Sparkles, AlertTriangle, ShieldCheck, HeartPulse } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
-  make: z.string().min(1, "Make is required"),
-  model: z.string().min(1, "Model is required"),
-  year: z.coerce.number().min(1900, "Valid year is required"),
-  mileage: z.coerce.number().min(0, "Mileage is required"),
-  issueDescription: z.string().min(10, "Please provide a detailed description."),
+  species: z.string().min(1, "Species is required"),
+  age: z.coerce.number().min(0, "Age is required"),
+  weight: z.coerce.number().min(0, "Weight is required"),
+  symptoms: z.string().min(10, "Please provide a detailed description of symptoms."),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function AiDiagnosticsForm() {
+export default function AiInsightsForm() {
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<GenerateVehicleDiagnosticsOutput | null>(null);
+  const [result, setResult] = useState<GeneratePredictiveAlertsOutput | null>(null);
   const { toast } = useToast();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      make: "Toyota",
-      year: new Date().getFullYear(),
+      species: "Bovine",
+      age: 12,
+      weight: 150,
     },
   });
 
@@ -45,13 +45,13 @@ export default function AiDiagnosticsForm() {
     setIsLoading(true);
     setResult(null);
     try {
-      const response = await generateVehicleDiagnostics(values);
+      const response = await generatePredictiveAlerts(values);
       setResult(response);
     } catch (error) {
-      console.error("Error generating diagnostics:", error);
+      console.error("Error generating alerts:", error);
       toast({
         title: "Error",
-        description: "Failed to generate AI diagnostics. Please try again.",
+        description: "Failed to generate AI insights. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -63,46 +63,33 @@ export default function AiDiagnosticsForm() {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <Card>
         <CardHeader>
-          <CardTitle>Vehicle Data</CardTitle>
-          <CardDescription>Enter vehicle details and issue to get diagnostics.</CardDescription>
+          <CardTitle>Animal Data</CardTitle>
+          <CardDescription>Enter animal details and symptoms to get predictive alerts.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-               <div className="grid grid-cols-2 gap-4">
+               <div className="grid grid-cols-1 gap-4">
                  <FormField
                   control={form.control}
-                  name="make"
+                  name="species"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Make</FormLabel>
+                      <FormLabel>Species</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a make" />
+                            <SelectValue placeholder="Select a species" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Toyota">Toyota</SelectItem>
-                          <SelectItem value="Honda">Honda</SelectItem>
-                          <SelectItem value="Ford">Ford</SelectItem>
-                          <SelectItem value="BMW">BMW</SelectItem>
-                          <SelectItem value="Mercedes">Mercedes</SelectItem>
+                          <SelectItem value="Bovine">Bovine</SelectItem>
+                          <SelectItem value="Porcine">Porcine</SelectItem>
+                          <SelectItem value="Poultry">Poultry</SelectItem>
+                          <SelectItem value="Caprine">Caprine</SelectItem>
+                          <SelectItem value="Rabbit">Rabbit</SelectItem>
                         </SelectContent>
                       </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="model"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Model</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Camry" {...field} />
-                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -111,12 +98,12 @@ export default function AiDiagnosticsForm() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="year"
+                  name="age"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Year</FormLabel>
+                      <FormLabel>Age (months)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="e.g., 2021" {...field} />
+                        <Input type="number" placeholder="e.g., 24" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -124,12 +111,12 @@ export default function AiDiagnosticsForm() {
                 />
                 <FormField
                   control={form.control}
-                  name="mileage"
+                  name="weight"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Mileage (km)</FormLabel>
+                      <FormLabel>Weight (kg)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="e.g., 50000" {...field} />
+                        <Input type="number" placeholder="e.g., 500" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -138,12 +125,12 @@ export default function AiDiagnosticsForm() {
               </div>
                 <FormField
                   control={form.control}
-                  name="issueDescription"
+                  name="symptoms"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Issue Description</FormLabel>
+                      <FormLabel>Symptoms / Observations</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="e.g., Engine makes a strange rattling noise on startup..." {...field} />
+                        <Textarea placeholder="e.g., Animal is lethargic and has a reduced appetite..." {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -158,7 +145,7 @@ export default function AiDiagnosticsForm() {
                 ) : (
                   <>
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Generate Diagnostics
+                    Generate Alerts
                   </>
                 )}
               </Button>
@@ -172,26 +159,42 @@ export default function AiDiagnosticsForm() {
           <CardHeader className="flex flex-row items-center gap-4 space-y-0">
              <div className="p-3 rounded-full bg-primary/10 text-primary"><AlertTriangle className="h-6 w-6" /></div>
             <div>
-                <CardTitle>Possible Causes</CardTitle>
-                <CardDescription>Potential reasons for the issue.</CardDescription>
+                <CardTitle>Risk Assessment</CardTitle>
+                <CardDescription>Overall health risk level.</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
             {isLoading && <p className="text-muted-foreground">Analyzing data...</p>}
-            {result?.possibleCauses && (
-                <ul className="list-disc pl-5 space-y-1 font-medium">
-                    {result.possibleCauses.map((cause, i) => <li key={i}>{cause}</li>)}
-                </ul>
+            {result?.riskLevel && (
+                <p className="font-medium text-lg">{result.riskLevel}</p>
             )}
-            {!isLoading && !result?.possibleCauses && <p className="text-muted-foreground">Submit vehicle data to get possible causes.</p>}
+            {!isLoading && !result?.riskLevel && <p className="text-muted-foreground">Submit animal data to get a risk assessment.</p>}
           </CardContent>
         </Card>
         <Card className="min-h-[150px]">
           <CardHeader className="flex flex-row items-center gap-4 space-y-0">
-            <div className="p-3 rounded-full bg-primary/10 text-primary"><Wrench className="h-6 w-6" /></div>
+            <div className="p-3 rounded-full bg-primary/10 text-primary"><HeartPulse className="h-6 w-6" /></div>
+            <div>
+                <CardTitle>Potential Health Issues</CardTitle>
+                <CardDescription>Possible underlying conditions.</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {isLoading && <p className="text-muted-foreground">Identifying issues...</p>}
+            {result?.potentialIssues && (
+                 <ul className="list-disc pl-5 space-y-1 font-medium">
+                    {result.potentialIssues.map((issue, i) => <li key={i}>{issue}</li>)}
+                </ul>
+            )}
+            {!isLoading && !result?.potentialIssues && <p className="text-muted-foreground">Submit animal data to see potential issues.</p>}
+          </CardContent>
+        </Card>
+        <Card className="min-h-[150px]">
+          <CardHeader className="flex flex-row items-center gap-4 space-y-0">
+            <div className="p-3 rounded-full bg-primary/10 text-primary"><ShieldCheck className="h-6 w-6" /></div>
             <div>
                 <CardTitle>Recommended Actions</CardTitle>
-                <CardDescription>Suggested steps for diagnosis.</CardDescription>
+                <CardDescription>Suggested next steps.</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
@@ -201,21 +204,7 @@ export default function AiDiagnosticsForm() {
                     {result.recommendedActions.map((action, i) => <li key={i}>{action}</li>)}
                 </ul>
             )}
-            {!isLoading && !result?.recommendedActions && <p className="text-muted-foreground">Submit vehicle data to get recommendations.</p>}
-          </CardContent>
-        </Card>
-        <Card className="min-h-[150px]">
-          <CardHeader className="flex flex-row items-center gap-4 space-y-0">
-            <div className="p-3 rounded-full bg-primary/10 text-primary"><Euro className="h-6 w-6" /></div>
-            <div>
-                <CardTitle>Estimated Cost</CardTitle>
-                <CardDescription>A rough estimate for repairs.</CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isLoading && <p className="text-muted-foreground">Calculating estimate...</p>}
-            {result?.estimatedCost && <p className="font-medium">{result.estimatedCost}</p>}
-            {!isLoading && !result && <p className="text-muted-foreground">Submit vehicle data to get an estimate.</p>}
+            {!isLoading && !result && <p className="text-muted-foreground">Submit animal data to get recommendations.</p>}
           </CardContent>
         </Card>
       </div>

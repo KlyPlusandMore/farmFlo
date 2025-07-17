@@ -7,11 +7,10 @@ import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wrench, Gauge, Droplet, ShoppingCart } from "lucide-react";
-import type { Vehicle, Make } from "@/lib/types";
+import { Wrench, Syringe, Scale, ShoppingCart, Rabbit } from "lucide-react";
+import type { Animal, Species } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { Car } from "lucide-react";
-import { useVehicles } from "@/hooks/use-vehicles";
+import { useAnimals } from "@/hooks/use-animals";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -49,17 +48,17 @@ const statusClasses = {
 };
 
 const formSchema = z.object({
-  id: z.string().min(1, "VIN is required"),
-  make: z.enum(["Toyota", "Honda", "Ford", "BMW", "Mercedes"]),
-  model: z.string().min(1, "Model is required"),
-  year: z.coerce.number().min(1900, "Year is required"),
-  mileage: z.coerce.number().min(0, "Mileage is required"),
-  location: z.string().min(1, "Location is required"),
+  id: z.string().optional(),
+  name: z.string().min(1, "Name is required"),
+  species: z.enum(["Bovine", "Porcine", "Poultry", "Caprine", "Rabbit"]),
+  age: z.coerce.number().min(0, "Age is required"),
+  weight: z.coerce.number().min(0, "Weight is required"),
+  lot: z.string().min(1, "Lot is required"),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
-function VehicleFormDialog({
+function AnimalFormDialog({
   open,
   onOpenChange,
   onSuccess
@@ -69,44 +68,44 @@ function VehicleFormDialog({
   onSuccess: () => void;
 }) {
   const { toast } = useToast();
-  const { addVehicle } = useVehicles();
+  const { addAnimal } = useAnimals();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: { make: "Toyota", model: "", location: "", year: new Date().getFullYear(), mileage: 0, id: "" },
+    defaultValues: { species: "Bovine", name: "", lot: "", age: 0, weight: 0 },
   });
 
   function onSubmit(values: FormData) {
-    addVehicle({ ...values, status: "Available" });
+    addAnimal({ ...values, status: "Healthy" });
     toast({
-      title: `Vehicle Added`,
-      description: `${values.make} ${values.model} has been successfully added to ${values.location}.`,
+      title: `${values.species} Added`,
+      description: `${values.name} has been successfully added to lot ${values.lot}.`,
     });
     onOpenChange(false);
     onSuccess();
-    form.reset({ make: "Toyota", model: "", location: "", year: new Date().getFullYear(), mileage: 0, id: "" });
+    form.reset({ species: "Bovine", name: "", lot: "", age: 0, weight: 0 });
   }
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Start New Cycle by Adding a Vehicle</DialogTitle>
+          <DialogTitle>Start New Cycle by Adding an Animal</DialogTitle>
           <DialogDescription>
-            Add a new vehicle to a location to begin a new service cycle or add to an existing one.
+            Add a new animal to a lot to begin a new cycle or add to an existing one.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="id"
+                  name="name"
                   render={({ field }) => (
                     <FormItem className="md:col-span-2">
-                      <FormLabel>VIN</FormLabel>
+                      <FormLabel>Animal Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Vehicle Identification Number" {...field} />
+                        <Input placeholder="e.g., Daisy" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -114,10 +113,10 @@ function VehicleFormDialog({
                 />
                  <FormField
                   control={form.control}
-                  name="make"
+                  name="species"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Make</FormLabel>
+                      <FormLabel>Species</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -125,11 +124,11 @@ function VehicleFormDialog({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Toyota">Toyota</SelectItem>
-                          <SelectItem value="Honda">Honda</SelectItem>
-                          <SelectItem value="Ford">Ford</SelectItem>
-                          <SelectItem value="BMW">BMW</SelectItem>
-                          <SelectItem value="Mercedes">Mercedes</SelectItem>
+                          <SelectItem value="Bovine">Bovine</SelectItem>
+                          <SelectItem value="Porcine">Porcine</SelectItem>
+                          <SelectItem value="Poultry">Poultry</SelectItem>
+                          <SelectItem value="Caprine">Caprine</SelectItem>
+                          <SelectItem value="Rabbit">Rabbit</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -138,12 +137,12 @@ function VehicleFormDialog({
                 />
                  <FormField
                   control={form.control}
-                  name="model"
+                  name="lot"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Model</FormLabel>
+                      <FormLabel>Lot Number</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Camry" {...field} />
+                        <Input placeholder="e.g., L001" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -151,12 +150,12 @@ function VehicleFormDialog({
                 />
                 <FormField
                   control={form.control}
-                  name="year"
+                  name="age"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Year</FormLabel>
+                      <FormLabel>Age (months)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="e.g., 2022" {...field} />
+                        <Input type="number" placeholder="e.g., 24" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -164,25 +163,12 @@ function VehicleFormDialog({
                 />
                 <FormField
                   control={form.control}
-                  name="mileage"
+                  name="weight"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Mileage (km)</FormLabel>
+                      <FormLabel>Weight (kg)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="e.g., 50000" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem className="md:col-span-2">
-                      <FormLabel>Location</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Lot A" {...field} />
+                        <Input type="number" placeholder="e.g., 500" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -191,7 +177,7 @@ function VehicleFormDialog({
             </div>
             
             <DialogFooter>
-              <Button type="submit">Add Vehicle to Cycle</Button>
+              <Button type="submit">Add Animal to Cycle</Button>
             </DialogFooter>
           </form>
         </Form>
@@ -201,69 +187,69 @@ function VehicleFormDialog({
 }
 
 export default function CyclesPage() {
-  const { vehicles } = useVehicles();
+  const { animals } = useAnimals();
   const [isFormOpen, setIsFormOpen] = useState(false);
 
-  const serviceCycles = useMemo(() => {
-    const locations = vehicles.reduce<Record<string, Vehicle[]>>((acc, vehicle) => {
-      if (vehicle.status !== 'Sold') {
-          (acc[vehicle.location] = acc[vehicle.location] || []).push(vehicle);
+  const productionCycles = useMemo(() => {
+    const lots = animals.reduce<Record<string, Animal[]>>((acc, animal) => {
+      if (animal.status !== 'Sold') {
+          (acc[animal.lot] = acc[animal.lot] || []).push(animal);
       }
       return acc;
     }, {});
 
-    return Object.entries(locations).map(([locationId, locationVehicles]) => {
-      const make = locationVehicles[0]?.make;
-      const vehicleCount = locationVehicles.length;
+    return Object.entries(lots).map(([lotId, lotAnimals]) => {
+      const species = lotAnimals[0]?.species;
+      const animalCount = lotAnimals.length;
       
       const steps = [
         { name: "Acquisition", icon: ShoppingCart, date: "Dynamic", status: "completed" },
-        { name: "Inspection", icon: Wrench, date: "Dynamic", status: "active" },
-        { name: "Oil Change", icon: Droplet, date: "Dynamic", status: "pending" },
-        { name: "Final Check", icon: Gauge, date: "Dynamic", status: "pending" },
+        { name: "Vaccination", icon: Syringe, date: "Dynamic", status: "active" },
+        { name: "Feeding", icon: Wrench, date: "Dynamic", status: "pending" },
+        { name: "Weight Check", icon: Scale, date: "Dynamic", status: "pending" },
       ];
 
       return {
-        id: `cycle-${locationId}`,
-        locationId,
-        make,
-        vehicleCount,
+        id: `cycle-${lotId}`,
+        lotId,
+        species,
+        animalCount,
         startDate: "N/A", // This would need to be stored somewhere
         steps,
       };
     });
-  }, [vehicles]);
+  }, [animals]);
 
   return (
     <>
-      <PageHeader title="Service Cycles" description="Track the service lifecycle of each vehicle group.">
+      <PageHeader title="Production Cycles" description="Track the lifecycle of each animal group.">
         <Button onClick={() => setIsFormOpen(true)}>Start New Cycle</Button>
       </PageHeader>
 
-       <VehicleFormDialog open={isFormOpen} onOpenChange={setIsFormOpen} onSuccess={() => {}} />
+       <AnimalFormDialog open={isFormOpen} onOpenChange={setIsFormOpen} onSuccess={() => {}} />
 
       <div className="space-y-6">
-        {serviceCycles.length === 0 && (
+        {productionCycles.length === 0 && (
             <Card>
                 <CardContent className="pt-6">
-                    <p className="text-muted-foreground text-center">No active service cycles. Add vehicles to locations to see them here.</p>
+                    <p className="text-muted-foreground text-center">No active production cycles. Add animals to lots to see them here.</p>
                 </CardContent>
             </Card>
         )}
-        {serviceCycles.map((cycle) => {
-          if (!cycle.make) return null;
+        {productionCycles.map((cycle) => {
+          if (!cycle.species) return null;
           return (
             <Card key={cycle.id}>
               <CardHeader>
                 <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
                     <div>
                         <CardTitle className="flex items-center gap-2">
-                          <Car className="h-6 w-6 text-primary" />
-                          <span>{cycle.make} Group - Location {cycle.locationId}</span>
+                          <Rabbit className="h-6 w-6 text-primary" />
+                          <span>{cycle.species} Group - Lot {cycle.lotId}</span>
                         </CardTitle>
-                        <CardDescription>{cycle.vehicleCount} vehicles, started on {cycle.startDate}</CardDescription>
+                        <CardDescription>{cycle.animalCount} animals, started on {cycle.startDate}</CardDescription>
                     </div>
-                    <Link href={`/vehicles?location=${cycle.locationId}`}>
+                    <Link href={`/animals?lot=${cycle.lotId}`}>
                         <Button variant="outline" size="sm">View Details</Button>
                     </Link>
                 </div>

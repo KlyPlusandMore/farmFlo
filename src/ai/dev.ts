@@ -1,4 +1,4 @@
 import { config } from 'dotenv';
 config();
 
-import '@/ai/flows/generate-vehicle-diagnostics.ts';
+import '@/ai/flows/generate-predictive-alerts.ts';
