@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import type { Animal } from "@/lib/types";
-import { Rabbit, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Rabbit, MoreHorizontal, Pencil, Trash2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -65,6 +65,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAccounting } from "@/hooks/use-accounting";
 import { useInvoices } from "@/hooks/use-invoices";
 import { useAnimals } from "@/hooks/use-animals";
+import { Textarea } from "@/components/ui/textarea";
 
 const statusColors: Record<Animal["status"], "default" | "destructive" | "secondary"> = {
   Healthy: "default",
@@ -76,10 +77,13 @@ const formSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "Name is required"),
   species: z.enum(["Bovine", "Porcine", "Poultry", "Caprine", "Rabbit"]),
-  age: z.coerce.number().min(0, "Age is required"),
+  breed: z.string().min(1, "Breed is required"),
+  birthDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Invalid date" }),
+  gender: z.enum(["Male", "Female"]),
   weight: z.coerce.number().min(0, "Weight is required"),
   lot: z.string().min(1, "Lot is required"),
   status: z.enum(["Healthy", "At Risk", "Sold"]),
+  notes: z.string().optional(),
   salePrice: z.coerce.number().optional(),
 }).refine(data => {
     if (data.status === 'Sold') {
@@ -111,7 +115,12 @@ function AnimalFormDialog({
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData || { species: "Bovine", status: "Healthy" },
+    defaultValues: initialData ? { ...initialData, birthDate: new Date(initialData.birthDate).toISOString().split("T")[0] } : { 
+      species: "Bovine", 
+      status: "Healthy", 
+      gender: "Female",
+      birthDate: new Date().toISOString().split("T")[0],
+    },
   });
 
   const status = form.watch("status");
@@ -168,7 +177,12 @@ function AnimalFormDialog({
     });
     setOpen(false);
     if (mode === "add") {
-      form.reset({ species: "Bovine", status: "Healthy" });
+      form.reset({ 
+        species: "Bovine",
+        status: "Healthy",
+        gender: "Female",
+        birthDate: new Date().toISOString().split("T")[0],
+      });
     }
   }
   
@@ -184,19 +198,6 @@ function AnimalFormDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Animal ID</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Unique identification number" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
              <div className="grid grid-cols-2 gap-4">
                  <FormField
                   control={form.control}
@@ -211,6 +212,21 @@ function AnimalFormDialog({
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="lot"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Lot</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., L001" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            </div>
+             <div className="grid grid-cols-2 gap-4">
                  <FormField
                   control={form.control}
                   name="species"
@@ -235,21 +251,57 @@ function AnimalFormDialog({
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="breed"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Breed</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Holstein" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
             </div>
             <div className="grid grid-cols-2 gap-4">
+               <FormField
+                  control={form.control}
+                  name="birthDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Birth Date</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               <FormField
                 control={form.control}
-                name="age"
+                name="gender"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Age (months)</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="e.g., 24" {...field} />
-                    </FormControl>
+                    <FormLabel>Gender</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Male">Male</SelectItem>
+                        <SelectItem value="Female">Female</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="weight"
@@ -263,21 +315,7 @@ function AnimalFormDialog({
                   </FormItem>
                 )}
               />
-            </div>
-            <FormField
-              control={form.control}
-              name="lot"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Lot</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., L001" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
+               <FormField
                 control={form.control}
                 name="status"
                 render={({ field }) => (
@@ -299,6 +337,20 @@ function AnimalFormDialog({
                   </FormItem>
                 )}
               />
+            </div>
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="e.g., Vaccination history, any specific observations..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
               {status === 'Sold' && (
                  <FormField
                     control={form.control}
@@ -355,9 +407,19 @@ function DeleteAnimalAlert({
 function AnimalsPageContent() {
   const { animals, deleteAnimal } = useAnimals();
   const { toast } = useToast();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const speciesFilter = searchParams.get("species");
   const lotFilter = searchParams.get("lot");
+
+  const getAgeInMonths = (birthDate: string) => {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let months = (today.getFullYear() - birth.getFullYear()) * 12;
+    months -= birth.getMonth();
+    months += today.getMonth();
+    return months <= 0 ? 0 : months;
+  };
 
   const filteredAnimals = useMemo(() => {
     return animals.filter(animal => {
@@ -404,11 +466,11 @@ function AnimalsPageContent() {
               <TableHead>ID</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Species</TableHead>
+              <TableHead>Breed</TableHead>
               <TableHead>Age (mths)</TableHead>
               <TableHead>Weight (kg)</TableHead>
               <TableHead>Lot</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Sale Price</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -424,14 +486,12 @@ function AnimalsPageContent() {
                       {animal.species}
                     </div>
                   </TableCell>
-                  <TableCell>{animal.age}</TableCell>
+                  <TableCell>{animal.breed}</TableCell>
+                  <TableCell>{getAgeInMonths(animal.birthDate)}</TableCell>
                   <TableCell>{animal.weight}</TableCell>
                   <TableCell>{animal.lot}</TableCell>
                   <TableCell>
                     <Badge variant={statusColors[animal.status]}>{animal.status}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {animal.salePrice ? `€${animal.salePrice.toFixed(2)}` : 'N/A'}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -442,6 +502,10 @@ function AnimalsPageContent() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onSelect={() => router.push(`/animals/${animal.id}`)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          <span>View</span>
+                        </DropdownMenuItem>
                         <AnimalFormDialog mode="edit" initialData={animal}>
                           <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                             <Pencil className="mr-2 h-4 w-4" />

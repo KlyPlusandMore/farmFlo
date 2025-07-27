@@ -6,11 +6,14 @@ export interface Animal {
   id: string;
   name: string;
   species: Species;
-  age: number; // in months
+  breed: string;
+  birthDate: string; // ISO string
+  gender: "Male" | "Female";
   weight: number; // in kg
   lot: string;
   status: "Healthy" | "At Risk" | "Sold";
   salePrice?: number;
+  notes?: string;
 }
 
 export interface InventoryItem {

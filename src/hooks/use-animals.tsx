@@ -15,11 +15,11 @@ interface AnimalsContextType {
 const AnimalsContext = createContext<AnimalsContextType | undefined>(undefined);
 
 const initialAnimals: Animal[] = [
-    { id: "A001", name: "Daisy", species: "Bovine", age: 24, weight: 650, lot: "L001", status: "Healthy" },
-    { id: "A002", name: "Babe", species: "Porcine", age: 6, weight: 100, lot: "L001", status: "At Risk" },
-    { id: "A003", name: "Cluck", species: "Poultry", age: 1, weight: 2, lot: "L002", status: "Healthy" },
-    { id: "A004", name: "Billy", species: "Caprine", age: 12, weight: 50, lot: "L003", status: "Sold", salePrice: 300 },
-    { id: "A005", name: "Peter", species: "Rabbit", age: 4, weight: 3, lot: "L002", status: "Healthy" },
+    { id: "A001", name: "Daisy", species: "Bovine", breed: "Holstein", birthDate: "2022-05-20", gender: "Female", weight: 650, lot: "L001", status: "Healthy" },
+    { id: "A002", name: "Babe", species: "Porcine", breed: "Yorkshire", birthDate: "2024-01-15", gender: "Male", weight: 100, lot: "L001", status: "At Risk" },
+    { id: "A003", name: "Cluck", species: "Poultry", breed: "Leghorn", birthDate: "2023-11-01", gender: "Female", weight: 2, lot: "L002", status: "Healthy", notes: "Good egg layer." },
+    { id: "A004", name: "Billy", species: "Caprine", breed: "Boer", birthDate: "2023-05-20", gender: "Male", weight: 50, lot: "L003", status: "Sold", salePrice: 300 },
+    { id: "A005", name: "Peter", species: "Rabbit", breed: "New Zealand White", birthDate: "2024-03-10", gender: "Male", weight: 3, lot: "L002", status: "Healthy" },
 ];
 
 export const AnimalsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
