@@ -413,8 +413,11 @@ function AnimalsPageContent() {
   const lotFilter = searchParams.get("lot");
 
   const getAgeInMonths = (birthDate: string) => {
-    const today = new Date();
     const birth = new Date(birthDate);
+    if (isNaN(birth.getTime())) {
+      return 0; // Return 0 or some default for invalid dates
+    }
+    const today = new Date();
     let months = (today.getFullYear() - birth.getFullYear()) * 12;
     months -= birth.getMonth();
     months += today.getMonth();
