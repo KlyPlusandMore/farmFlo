@@ -101,10 +101,12 @@ type FormData = z.infer<typeof formSchema>;
 function AnimalFormDialog({
   mode,
   initialData,
+  onSuccess,
   children,
 }: {
   mode: "add" | "edit";
   initialData?: Animal;
+  onSuccess: () => void;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -179,6 +181,7 @@ function AnimalFormDialog({
     } else { // Create
       addAnimal(data as Omit<Animal, 'id'>);
     }
+    onSuccess();
   }
 
 
@@ -430,6 +433,7 @@ function AnimalsPageContent() {
   const searchParams = useSearchParams();
   const speciesFilter = searchParams.get("species");
   const lotFilter = searchParams.get("lot");
+  const [, setForceRender] = useState(0);
 
   const getAgeInMonths = (birthDate: string) => {
     const birth = new Date(birthDate);
@@ -476,7 +480,7 @@ function AnimalsPageContent() {
   return (
     <>
       <PageHeader title={pageTitle} description={pageDescription}>
-        <AnimalFormDialog mode="add">
+        <AnimalFormDialog mode="add" onSuccess={() => setForceRender(Math.random())}>
           <Button>Add Animal</Button>
         </AnimalFormDialog>
       </PageHeader>
@@ -528,7 +532,7 @@ function AnimalsPageContent() {
                           <Eye className="mr-2 h-4 w-4" />
                           <span>View</span>
                         </DropdownMenuItem>
-                        <AnimalFormDialog mode="edit" initialData={animal}>
+                        <AnimalFormDialog mode="edit" initialData={animal} onSuccess={() => setForceRender(Math.random())}>
                           <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                             <Pencil className="mr-2 h-4 w-4" />
                             <span>Edit</span>
