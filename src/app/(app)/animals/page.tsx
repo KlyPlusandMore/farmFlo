@@ -115,12 +115,19 @@ function AnimalFormDialog({
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData ? { ...initialData, birthDate: new Date(initialData.birthDate).toISOString().split("T")[0] } : { 
-      species: "Bovine", 
-      status: "Healthy", 
-      gender: "Female",
-      birthDate: new Date().toISOString().split("T")[0],
-    },
+    defaultValues: initialData 
+      ? { 
+          ...initialData, 
+          birthDate: !isNaN(Date.parse(initialData.birthDate)) 
+            ? new Date(initialData.birthDate).toISOString().split("T")[0] 
+            : new Date().toISOString().split("T")[0]
+        } 
+      : { 
+          species: "Bovine", 
+          status: "Healthy", 
+          gender: "Female",
+          birthDate: new Date().toISOString().split("T")[0],
+        },
   });
 
   const status = form.watch("status");
