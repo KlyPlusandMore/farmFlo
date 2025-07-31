@@ -204,7 +204,7 @@ function AnimalFormDialog({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 overflow-y-auto max-h-[70vh] p-1">
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <FormField
                   control={form.control}
@@ -373,7 +373,7 @@ function AnimalFormDialog({
                     )}
                 />
               )}
-            <DialogFooter>
+            <DialogFooter className="pt-4">
               <Button type="submit">Save Changes</Button>
             </DialogFooter>
           </form>
