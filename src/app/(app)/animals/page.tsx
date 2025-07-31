@@ -43,7 +43,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -123,10 +122,16 @@ function AnimalFormDialog({
             : new Date().toISOString().split("T")[0]
         } 
       : { 
+          name: '',
           species: "Bovine", 
-          status: "Healthy", 
-          gender: "Female",
+          breed: '',
           birthDate: new Date().toISOString().split("T")[0],
+          gender: "Female",
+          weight: 0,
+          lot: '',
+          status: "Healthy", 
+          notes: '',
+          salePrice: 0,
         },
   });
 
@@ -185,10 +190,16 @@ function AnimalFormDialog({
     setOpen(false);
     if (mode === "add") {
       form.reset({ 
+        name: '',
         species: "Bovine",
-        status: "Healthy",
-        gender: "Female",
+        breed: '',
         birthDate: new Date().toISOString().split("T")[0],
+        gender: "Female",
+        weight: 0,
+        lot: '',
+        status: "Healthy",
+        notes: '',
+        salePrice: 0,
       });
     }
   }
