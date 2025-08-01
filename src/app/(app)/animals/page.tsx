@@ -140,10 +140,10 @@ function AnimalFormDialog({
 
   const status = form.watch("status");
 
-  function onSave(data: FormData) {
-     if (initialData) { // Update
+  async function onSave(data: FormData) {
+     if (initialData && data.id) { // Update
       const originalAnimal = initialData;
-      updateAnimal(data as Animal);
+      await updateAnimal({ ...data, id: data.id });
       
       if (data.status === 'Sold' && originalAnimal?.status !== 'Sold' && data.salePrice) {
         addTransaction({
@@ -179,14 +179,14 @@ function AnimalFormDialog({
       }
 
     } else { // Create
-      addAnimal(data as Omit<Animal, 'id'>);
+      await addAnimal(data);
     }
     onSuccess();
   }
 
 
-  function onSubmit(values: FormData) {
-    onSave(values);
+  async function onSubmit(values: FormData) {
+    await onSave(values);
     toast({
       title: `${values.species} ${mode === "add" ? "Added" : "Updated"}`,
       description: `${values.name} has been successfully ${mode === "add" ? "added" : "updated"}.`,
@@ -427,7 +427,7 @@ function DeleteAnimalAlert({
 }
 
 function AnimalsPageContent() {
-  const { animals, deleteAnimal } = useAnimals();
+  const { animals, deleteAnimal, loading } = useAnimals();
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -455,8 +455,8 @@ function AnimalsPageContent() {
     });
   }, [animals, speciesFilter, lotFilter]);
 
-  function handleDeleteAnimal(animalId: string) {
-    deleteAnimal(animalId);
+  async function handleDeleteAnimal(animalId: string) {
+    await deleteAnimal(animalId);
     toast({
       title: "Animal Deleted",
       description: "The animal has been removed from the list.",
@@ -501,58 +501,68 @@ function AnimalsPageContent() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredAnimals.map((animal) => {
-              return (
-                <TableRow key={animal.id}>
-                  <TableCell className="font-medium">{animal.id}</TableCell>
-                  <TableCell>{animal.name}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Rabbit className="h-5 w-5 text-muted-foreground" />
-                      {animal.species}
-                    </div>
-                  </TableCell>
-                  <TableCell>{animal.breed}</TableCell>
-                  <TableCell>{getAgeInMonths(animal.birthDate)}</TableCell>
-                  <TableCell>{animal.weight}</TableCell>
-                  <TableCell>{animal.lot}</TableCell>
-                  <TableCell>
-                    <Badge variant={statusColors[animal.status]}>{animal.status}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onSelect={() => router.push(`/animals/${animal.id}`)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          <span>View</span>
-                        </DropdownMenuItem>
-                        <AnimalFormDialog mode="edit" initialData={animal} onSuccess={() => setForceRender(Math.random())}>
-                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            <span>Edit</span>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={9} className="text-center h-24">Loading animals...</TableCell>
+              </TableRow>
+            ) : filteredAnimals.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={9} className="text-center h-24">No animals found.</TableCell>
+              </TableRow>
+            ) : (
+              filteredAnimals.map((animal) => {
+                return (
+                  <TableRow key={animal.id}>
+                    <TableCell className="font-medium">{animal.id.substring(0, 7)}...</TableCell>
+                    <TableCell>{animal.name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Rabbit className="h-5 w-5 text-muted-foreground" />
+                        {animal.species}
+                      </div>
+                    </TableCell>
+                    <TableCell>{animal.breed}</TableCell>
+                    <TableCell>{getAgeInMonths(animal.birthDate)}</TableCell>
+                    <TableCell>{animal.weight}</TableCell>
+                    <TableCell>{animal.lot}</TableCell>
+                    <TableCell>
+                      <Badge variant={statusColors[animal.status]}>{animal.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onSelect={() => router.push(`/animals/${animal.id}`)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            <span>View</span>
                           </DropdownMenuItem>
-                        </AnimalFormDialog>
-                        <DeleteAnimalAlert
-                          animalName={`${animal.name} (${animal.species})`}
-                          onDelete={() => handleDeleteAnimal(animal.id)}
-                        >
-                          <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
-                             <Trash2 className="mr-2 h-4 w-4" />
-                             <span>Delete</span>
-                          </DropdownMenuItem>
-                        </DeleteAnimalAlert>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+                          <AnimalFormDialog mode="edit" initialData={animal} onSuccess={() => setForceRender(Math.random())}>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              <span>Edit</span>
+                            </DropdownMenuItem>
+                          </AnimalFormDialog>
+                          <DeleteAnimalAlert
+                            animalName={`${animal.name} (${animal.species})`}
+                            onDelete={() => handleDeleteAnimal(animal.id)}
+                          >
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                               <Trash2 className="mr-2 h-4 w-4" />
+                               <span>Delete</span>
+                            </DropdownMenuItem>
+                          </DeleteAnimalAlert>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
           </TableBody>
         </Table>
       </div>

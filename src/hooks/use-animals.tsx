@@ -2,14 +2,17 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, DocumentData } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import type { Animal } from '@/lib/types';
 
 interface AnimalsContextType {
   animals: Animal[];
-  addAnimal: (animal: Omit<Animal, 'id'>) => Animal;
-  updateAnimal: (animal: Animal) => void;
-  deleteAnimal: (id: string) => void;
+  addAnimal: (animal: Omit<Animal, 'id'>) => Promise<void>;
+  updateAnimal: (animal: Animal) => Promise<void>;
+  deleteAnimal: (id: string) => Promise<void>;
   getAnimal: (id: string) => Animal | undefined;
+  loading: boolean;
 }
 
 const AnimalsContext = createContext<AnimalsContextType | undefined>(undefined);
@@ -22,60 +25,69 @@ const initialAnimals: Animal[] = [
     { id: "A005", name: "Peter", species: "Rabbit", breed: "New Zealand White", birthDate: "2024-03-10", gender: "Male", weight: 3, lot: "L002", status: "Healthy" },
 ];
 
+async function addInitialData(animalsCollection: any) {
+    const promises = initialAnimals.map(animal => {
+        const { id, ...animalData } = animal;
+        // Use the predefined ID for the document ID in Firestore
+        return addDoc(animalsCollection, animalData);
+    });
+    await Promise.all(promises);
+}
+
+
 export const AnimalsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [animals, setAnimals] = useState<Animal[]>([]);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const animalsCollection = collection(db, 'animals');
+    
+    const unsubscribe = onSnapshot(animalsCollection, (snapshot) => {
+        if (snapshot.empty) {
+            // If the collection is empty, add the initial data.
+            // This is for demonstration purposes. In a real app, you might not want to do this.
+            addInitialData(collection(db, 'animals')).then(() => setLoading(false));
+        } else {
+            const animalsData = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            } as Animal));
+            setAnimals(animalsData);
+            setLoading(false);
+        }
+    }, (error) => {
+        console.error("Error fetching animals from Firestore: ", error);
+        setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+  
+  const addAnimal = useCallback(async (animalData: Omit<Animal, 'id'>) => {
     try {
-      const item = window.localStorage.getItem('animals');
-      if (item) {
-        setAnimals(JSON.parse(item));
-      } else {
-        setAnimals(initialAnimals);
-      }
+        await addDoc(collection(db, 'animals'), animalData);
     } catch (error) {
-      console.error(error);
-      setAnimals(initialAnimals);
+        console.error("Error adding animal: ", error);
     }
-    setIsInitialized(true);
   }, []);
 
-  useEffect(() => {
-    if (isInitialized) {
-      try {
-          window.localStorage.setItem('animals', JSON.stringify(animals));
-      } catch (error) {
-          console.error(error);
-      }
+  const updateAnimal = useCallback(async (updatedAnimal: Animal) => {
+    const animalDocRef = doc(db, 'animals', updatedAnimal.id);
+    try {
+        const { id, ...dataToUpdate } = updatedAnimal;
+        await updateDoc(animalDocRef, dataToUpdate);
+    } catch (error) {
+        console.error("Error updating animal: ", error);
     }
-  }, [animals, isInitialized]);
-  
-  const getNextId = useCallback(() => {
-    const prefix = "A";
-    const lastIdNum = animals.reduce((maxId, animal) => {
-        const idNum = parseInt(animal.id.replace(prefix, '') || '0');
-        return idNum > maxId ? idNum : maxId;
-    }, 0);
-    return `${prefix}${String(lastIdNum + 1).padStart(3, '0')}`;
-  }, [animals]);
-  
-  const addAnimal = useCallback((animalData: Omit<Animal, 'id'>) => {
-    const newId = (animalData as any).id || getNextId();
-    const newAnimal: Animal = {
-      ...animalData,
-      id: newId,
-    };
-    setAnimals(prev => [...prev, newAnimal]);
-    return newAnimal;
-  }, [getNextId]);
-
-  const updateAnimal = useCallback((updatedAnimal: Animal) => {
-    setAnimals(prev => prev.map(animal => animal.id === updatedAnimal.id ? updatedAnimal : animal));
   }, []);
 
-  const deleteAnimal = useCallback((id: string) => {
-    setAnimals(prev => prev.filter(animal => animal.id !== id));
+  const deleteAnimal = useCallback(async (id: string) => {
+    const animalDocRef = doc(db, 'animals', id);
+    try {
+        await deleteDoc(animalDocRef);
+    } catch (error) {
+        console.error("Error deleting animal: ", error);
+    }
   }, []);
 
   const getAnimal = useCallback((id: string) => {
@@ -83,7 +95,7 @@ export const AnimalsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [animals]);
 
   return (
-    <AnimalsContext.Provider value={{ animals, addAnimal, updateAnimal, deleteAnimal, getAnimal }}>
+    <AnimalsContext.Provider value={{ animals, addAnimal, updateAnimal, deleteAnimal, getAnimal, loading }}>
       {children}
     </AnimalsContext.Provider>
   );
