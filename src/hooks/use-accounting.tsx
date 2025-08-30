@@ -2,65 +2,51 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { collection, onSnapshot, addDoc, query, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import type { Transaction } from '@/lib/types';
 
 interface AccountingContextType {
   transactions: Transaction[];
-  addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
+  addTransaction: (transaction: Omit<Transaction, 'id'>) => Promise<void>;
+  loading: boolean;
 }
 
 const AccountingContext = createContext<AccountingContextType | undefined>(undefined);
 
-const initialTransactions: Transaction[] = [
-  { id: "T-001", date: "2023-07-10", description: "Sale of Billy the Goat", category: "Sale", type: "Income", amount: 300 },
-  { id: "T-002", date: "2023-07-05", description: "Purchase Bovine Feed", category: "Feed", type: "Expense", amount: 500 },
-  { id: "T-003", date: "2023-07-02", description: "Purchase Antibiotics", category: "Medication", type: "Expense", amount: 75 },
-];
-
 export const AccountingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const item = window.localStorage.getItem('transactions');
-      if (item) {
-        setTransactions(JSON.parse(item));
-      } else {
-        setTransactions(initialTransactions);
-      }
-    } catch (error) {
-      console.error(error);
-      setTransactions(initialTransactions);
-    }
-    setIsInitialized(true);
+    const transactionsCollection = collection(db, 'transactions');
+    const q = query(transactionsCollection, orderBy('date', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const transactionsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Transaction));
+      setTransactions(transactionsData);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching transactions from Firestore: ", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (isInitialized) {
-      try {
-          window.localStorage.setItem('transactions', JSON.stringify(transactions));
-      } catch (error) {
-          console.error(error);
-      }
+  const addTransaction = useCallback(async (transactionData: Omit<Transaction, 'id'>) => {
+    try {
+      await addDoc(collection(db, 'transactions'), transactionData);
+    } catch (error) {
+      console.error("Error adding transaction: ", error);
     }
-  }, [transactions, isInitialized]);
-  
-  const addTransaction = useCallback((transaction: Omit<Transaction, 'id'>) => {
-    setTransactions(prev => {
-        const newId = `T-${String(prev.length + 1).padStart(3, '0')}`;
-        const newTransaction: Transaction = {
-            ...transaction,
-            id: newId,
-        };
-        const updatedTransactions = [newTransaction, ...prev];
-        updatedTransactions.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        return updatedTransactions;
-    });
   }, []);
 
   return (
-    <AccountingContext.Provider value={{ transactions, addTransaction }}>
+    <AccountingContext.Provider value={{ transactions, addTransaction, loading }}>
       {children}
     </AccountingContext.Provider>
   );

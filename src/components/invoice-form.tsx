@@ -49,7 +49,7 @@ interface InvoiceFormProps {
 
 export function InvoiceForm({ initialData }: InvoiceFormProps) {
   const router = useRouter();
-  const { addInvoice, updateInvoice, getNextInvoiceId } = useInvoices();
+  const { addInvoice, updateInvoice } = useInvoices();
   const { toast } = useToast();
 
   const form = useForm<FormData>({
@@ -73,7 +73,7 @@ export function InvoiceForm({ initialData }: InvoiceFormProps) {
     name: "lineItems",
   });
 
-  const onSubmit = (data: FormData) => {
+  const onSubmit = async (data: FormData) => {
     const processedData = {
         ...data,
         lineItems: data.lineItems.map(item => ({
@@ -83,16 +83,18 @@ export function InvoiceForm({ initialData }: InvoiceFormProps) {
         }))
     };
     if (initialData) {
-      updateInvoice(processedData as Invoice);
-      toast({ title: "Invoice Updated", description: `Invoice ${initialData.id} has been updated.` });
+      await updateInvoice(processedData as Invoice);
+      toast({ title: "Invoice Updated", description: `Invoice ${initialData.id.substring(0,8)}... has been updated.` });
     } else {
-      const newInvoice = addInvoice(processedData);
-      toast({ title: "Invoice Created", description: `New invoice ${newInvoice.id} has been created.` });
+      const newInvoice = await addInvoice(processedData);
+      if (newInvoice) {
+        toast({ title: "Invoice Created", description: `New invoice ${newInvoice.id.substring(0,8)}... has been created.` });
+      }
     }
     router.push("/invoices");
   };
 
-  const pageTitle = initialData ? `Edit Invoice ${initialData.id}` : "Create New Invoice";
+  const pageTitle = initialData ? `Edit Invoice ${initialData.id.substring(0,8)}...` : "Create New Invoice";
   const pageDescription = initialData ? "Update the invoice details below." : "Fill in the details to create a new invoice.";
   
   return (

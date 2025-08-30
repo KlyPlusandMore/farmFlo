@@ -1,10 +1,12 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { PageHeader } from "@/components/page-header";
 import {
   Table,
@@ -64,13 +66,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { useAccounting } from "@/hooks/use-accounting";
 
-
-const initialInventory: InventoryItem[] = [
-  { id: "FEED-001", name: "Bovine Feed", category: "Feed", quantity: 50, unit: "bags", lowStockThreshold: 10 },
-  { id: "MED-001", name: "General Antibiotic", category: "Medication", quantity: 20, unit: "bottles", lowStockThreshold: 5 },
-  { id: "EQUIP-001", name: "Water Trough", category: "Equipment", quantity: 10, unit: "units", lowStockThreshold: 2 },
-];
-
 const formSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "Name is required"),
@@ -91,14 +86,14 @@ function InventoryFormDialog({
 }: {
   mode: "add" | "edit";
   initialData?: InventoryItem;
-  onSave: (data: FormData) => void;
+  onSave: (data: Omit<InventoryItem, 'id'> | InventoryItem) => void;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData || { category: "Feed", quantity: 0, lowStockThreshold: 10 },
+    defaultValues: initialData || { name: '', category: "Feed", quantity: 0, unit: '', lowStockThreshold: 10, purchasePrice: 0 },
   });
 
   function onSubmit(values: FormData) {
@@ -259,19 +254,38 @@ function DeleteItemAlert({
   );
 }
 
-
 export default function InventoryPage() {
-  const [inventory, setInventory] = useState<InventoryItem[]>(initialInventory);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const { addTransaction } = useAccounting();
   const { toast } = useToast();
 
-  function handleSaveItem(data: FormData) {
-     if (data.id) { // Update
+  useEffect(() => {
+    const inventoryCollection = collection(db, 'inventory');
+    const unsubscribe = onSnapshot(inventoryCollection, (snapshot) => {
+      const inventoryData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as InventoryItem));
+      setInventory(inventoryData);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching inventory from Firestore: ", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  async function handleSaveItem(data: Omit<InventoryItem, 'id'> | InventoryItem) {
+     if ('id' in data && data.id) { // Update
       const originalItem = inventory.find(i => i.id === data.id);
       const quantityAdded = data.quantity - (originalItem?.quantity || 0);
-
-      setInventory(prev => prev.map(item => item.id === data.id ? { ...item, ...data } as InventoryItem : item));
       
+      const { id, ...dataToUpdate } = data;
+      const itemDocRef = doc(db, 'inventory', id);
+      await updateDoc(itemDocRef, dataToUpdate);
+
       if (data.purchasePrice && data.purchasePrice > 0 && quantityAdded > 0) {
         addTransaction({
           date: new Date().toISOString().split('T')[0],
@@ -287,13 +301,9 @@ export default function InventoryPage() {
       }
 
     } else { // Create
-      const categoryPrefix = data.category.substring(0, 4).toUpperCase();
-      const newId = `${categoryPrefix}-${String(inventory.filter(i => i.category === data.category).length + 1).padStart(3, '0')}`;
-      const newItem: InventoryItem = {
-        ...data,
-        id: newId,
-      };
-      setInventory(prev => [...prev, newItem]);
+      const { id, ...dataToAdd } = data;
+      const newItemRef = await addDoc(collection(db, 'inventory'), dataToAdd);
+
        if (data.purchasePrice && data.purchasePrice > 0) {
         addTransaction({
             date: new Date().toISOString().split('T')[0],
@@ -310,8 +320,9 @@ export default function InventoryPage() {
     }
   }
 
-  function handleDeleteItem(itemId: string) {
-    setInventory(prev => prev.filter(item => item.id !== itemId));
+  async function handleDeleteItem(itemId: string) {
+    const itemDocRef = doc(db, 'inventory', itemId);
+    await deleteDoc(itemDocRef);
     toast({
       title: "Item Deleted",
       description: "The item has been removed from the inventory.",
@@ -340,61 +351,69 @@ export default function InventoryPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {inventory.map((item) => {
-              const isLowStock = item.quantity <= item.lowStockThreshold;
-              const stockPercentage = Math.min((item.quantity / (item.lowStockThreshold * 2)) * 100, 100);
-              return (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{item.category}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">{`${item.quantity} ${item.unit}`}</TableCell>
-                  <TableCell>
-                    <Progress value={stockPercentage} className="h-2" />
-                  </TableCell>
-                  <TableCell>
-                    {isLowStock ? (
-                      <Badge variant="destructive">Low Stock</Badge>
-                    ) : (
-                      <Badge variant="default">In Stock</Badge>
-                    )}
-                  </TableCell>
-                   <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <InventoryFormDialog mode="edit" initialData={item} onSave={handleSaveItem}>
-                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            <span>Edit</span>
-                          </DropdownMenuItem>
-                        </InventoryFormDialog>
-                        <DeleteItemAlert
-                          itemName={item.name}
-                          onDelete={() => handleDeleteItem(item.id)}
-                        >
-                          <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
-                             <Trash2 className="mr-2 h-4 w-4" />
-                             <span>Delete</span>
-                          </DropdownMenuItem>
-                        </DeleteItemAlert>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+             {loading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center h-24">Loading inventory...</TableCell>
+              </TableRow>
+            ) : inventory.length === 0 ? (
+               <TableRow>
+                <TableCell colSpan={6} className="text-center h-24">No inventory items found.</TableCell>
+              </TableRow>
+            ) : (
+              inventory.map((item) => {
+                const isLowStock = item.quantity <= item.lowStockThreshold;
+                const stockPercentage = Math.min((item.quantity / (item.lowStockThreshold * 2)) * 100, 100);
+                return (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{item.category}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">{`${item.quantity} ${item.unit}`}</TableCell>
+                    <TableCell>
+                      <Progress value={stockPercentage} className="h-2" />
+                    </TableCell>
+                    <TableCell>
+                      {isLowStock ? (
+                        <Badge variant="destructive">Low Stock</Badge>
+                      ) : (
+                        <Badge variant="default">In Stock</Badge>
+                      )}
+                    </TableCell>
+                     <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <InventoryFormDialog mode="edit" initialData={item} onSave={handleSaveItem}>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              <span>Edit</span>
+                            </DropdownMenuItem>
+                          </InventoryFormDialog>
+                          <DeleteItemAlert
+                            itemName={item.name}
+                            onDelete={() => handleDeleteItem(item.id)}
+                          >
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                               <Trash2 className="mr-2 h-4 w-4" />
+                               <span>Delete</span>
+                            </DropdownMenuItem>
+                          </DeleteItemAlert>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
           </TableBody>
         </Table>
       </div>
     </>
   );
 }
-
-    

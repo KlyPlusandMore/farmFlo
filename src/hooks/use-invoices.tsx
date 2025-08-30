@@ -1,37 +1,21 @@
 
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import type { Invoice, InvoiceLineItem } from '@/lib/types';
 
 interface InvoicesContextType {
   invoices: Invoice[];
   getInvoice: (id: string) => Invoice | undefined;
-  addInvoice: (invoice: Omit<Invoice, 'id' | 'subtotal' | 'tax' | 'total'>) => Invoice;
-  updateInvoice: (invoice: Invoice) => void;
-  deleteInvoice: (id: string) => void;
-  getNextInvoiceId: () => string;
+  addInvoice: (invoice: Omit<Invoice, 'id' | 'subtotal' | 'tax' | 'total'>) => Promise<Invoice | undefined>;
+  updateInvoice: (invoice: Invoice) => Promise<void>;
+  deleteInvoice: (id: string) => Promise<void>;
+  loading: boolean;
 }
 
 const InvoicesContext = createContext<InvoicesContextType | undefined>(undefined);
-
-const initialInvoices: Invoice[] = [
-    {
-      id: "INV-001",
-      clientName: "Local Butcher Shop",
-      clientEmail: "butcher@local.com",
-      issueDate: "2023-07-10",
-      dueDate: "2023-08-09",
-      lineItems: [
-        { id: "1", description: "Sale of Caprine (Billy)", quantity: 1, unitPrice: 300, total: 300 }
-      ],
-      subtotal: 300,
-      tax: 60, // Example tax
-      total: 360,
-      status: "Paid",
-    },
-];
 
 const calculateTotals = (lineItems: InvoiceLineItem[]) => {
     const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0);
@@ -41,59 +25,60 @@ const calculateTotals = (lineItems: InvoiceLineItem[]) => {
 }
 
 export const InvoicesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const item = window.localStorage.getItem('invoices');
-      if (item) {
-        setInvoices(JSON.parse(item));
-      }
-    } catch (error) {
-      console.error(error);
-    }
-    setIsInitialized(true);
+    const invoicesCollection = collection(db, 'invoices');
+    const q = query(invoicesCollection, orderBy('issueDate', 'desc'));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const invoicesData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        } as Invoice));
+        setInvoices(invoicesData);
+        setLoading(false);
+    }, (error) => {
+        console.error("Error fetching invoices from Firestore: ", error);
+        setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (isInitialized) {
-      try {
-          window.localStorage.setItem('invoices', JSON.stringify(invoices));
-      } catch (error) {
-          console.error(error);
-      }
-    }
-  }, [invoices, isInitialized]);
-  
-  const getNextInvoiceId = useCallback(() => {
-    const lastId = invoices.reduce((maxId, inv) => {
-        const idNum = parseInt(inv.id.split('-')[1] || '0');
-        return idNum > maxId ? idNum : maxId;
-    }, 0);
-    return `INV-${String(lastId + 1).padStart(3, '0')}`;
-  }, [invoices]);
-
-  const addInvoice = useCallback((invoiceData: Omit<Invoice, 'id' | 'subtotal' | 'tax' | 'total'>) => {
-    const newId = getNextInvoiceId();
+  const addInvoice = useCallback(async (invoiceData: Omit<Invoice, 'id' | 'subtotal' | 'tax' | 'total'>) => {
     const totals = calculateTotals(invoiceData.lineItems);
-    const newInvoice: Invoice = {
+    const newInvoice: Omit<Invoice, 'id'> = {
       ...invoiceData,
-      id: newId,
       ...totals,
     };
-    setInvoices(prev => [newInvoice, ...prev]);
-    return newInvoice;
-  }, [getNextInvoiceId]);
-
-  const updateInvoice = useCallback((updatedInvoice: Invoice) => {
-    const totals = calculateTotals(updatedInvoice.lineItems);
-    const finalInvoice = { ...updatedInvoice, ...totals };
-    setInvoices(prev => prev.map(inv => inv.id === finalInvoice.id ? finalInvoice : inv));
+    try {
+        const docRef = await addDoc(collection(db, 'invoices'), newInvoice);
+        return { ...newInvoice, id: docRef.id };
+    } catch (error) {
+        console.error("Error adding invoice: ", error);
+    }
   }, []);
 
-  const deleteInvoice = useCallback((id: string) => {
-    setInvoices(prev => prev.filter(inv => inv.id !== id));
+  const updateInvoice = useCallback(async (updatedInvoice: Invoice) => {
+    const invoiceDocRef = doc(db, 'invoices', updatedInvoice.id);
+    try {
+        const totals = calculateTotals(updatedInvoice.lineItems);
+        const { id, ...dataToUpdate } = { ...updatedInvoice, ...totals };
+        await updateDoc(invoiceDocRef, dataToUpdate);
+    } catch (error) {
+        console.error("Error updating invoice: ", error);
+    }
+  }, []);
+
+  const deleteInvoice = useCallback(async (id: string) => {
+    const invoiceDocRef = doc(db, 'invoices', id);
+    try {
+        await deleteDoc(invoiceDocRef);
+    } catch (error) {
+        console.error("Error deleting invoice: ", error);
+    }
   }, []);
 
   const getInvoice = useCallback((id: string) => {
@@ -101,7 +86,7 @@ export const InvoicesProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [invoices]);
 
   return (
-    <InvoicesContext.Provider value={{ invoices, getInvoice, addInvoice, updateInvoice, deleteInvoice, getNextInvoiceId }}>
+    <InvoicesContext.Provider value={{ invoices, getInvoice, addInvoice, updateInvoice, deleteInvoice, loading }}>
       {children}
     </InvoicesContext.Provider>
   );

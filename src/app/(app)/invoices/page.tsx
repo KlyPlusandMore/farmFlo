@@ -45,11 +45,11 @@ const statusColors: Record<Invoice["status"], "default" | "secondary" | "destruc
 
 export default function InvoicesPage() {
   const router = useRouter();
-  const { invoices, deleteInvoice } = useInvoices();
+  const { invoices, deleteInvoice, loading } = useInvoices();
   const { toast } = useToast();
 
-  const handleDelete = (id: string) => {
-    deleteInvoice(id);
+  const handleDelete = async (id: string) => {
+    await deleteInvoice(id);
     toast({
       title: "Invoice Deleted",
       description: `Invoice ${id} has been permanently deleted.`,
@@ -79,60 +79,70 @@ export default function InvoicesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {invoices.map((invoice) => (
-              <TableRow key={invoice.id}>
-                <TableCell className="font-medium">{invoice.id}</TableCell>
-                <TableCell>{invoice.clientName}</TableCell>
-                <TableCell>{new Date(invoice.issueDate).toLocaleDateString()}</TableCell>
-                <TableCell>{new Date(invoice.dueDate).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  <Badge variant={statusColors[invoice.status]}>{invoice.status}</Badge>
-                </TableCell>
-                <TableCell className="text-right font-semibold">
-                  €{invoice.total.toFixed(2)}
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => router.push(`/invoices/${invoice.id}`)}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        <span>View</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push(`/invoices/${invoice.id}/edit`)}>
-                        <Pencil className="mr-2 h-4 w-4" />
-                        <span>Edit</span>
-                      </DropdownMenuItem>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                           <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
-                             <Trash2 className="mr-2 h-4 w-4" />
-                             <span>Delete</span>
-                          </DropdownMenuItem>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete invoice {invoice.id}.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(invoice.id)}>Delete</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
+            {loading ? (
+                <TableRow>
+                    <TableCell colSpan={7} className="text-center h-24">Loading invoices...</TableCell>
+                </TableRow>
+            ) : invoices.length === 0 ? (
+                 <TableRow>
+                    <TableCell colSpan={7} className="text-center h-24">No invoices found.</TableCell>
+                </TableRow>
+            ) : (
+                invoices.map((invoice) => (
+                <TableRow key={invoice.id}>
+                    <TableCell className="font-medium">{invoice.id.substring(0, 8)}...</TableCell>
+                    <TableCell>{invoice.clientName}</TableCell>
+                    <TableCell>{new Date(invoice.issueDate).toLocaleDateString()}</TableCell>
+                    <TableCell>{new Date(invoice.dueDate).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                    <Badge variant={statusColors[invoice.status]}>{invoice.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">
+                    €{invoice.total.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => router.push(`/invoices/${invoice.id}`)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            <span>View</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push(`/invoices/${invoice.id}/edit`)}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            <span>Edit</span>
+                        </DropdownMenuItem>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>Delete</span>
+                            </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete invoice {invoice.id.substring(0,8)}...
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(invoice.id)}>Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    </TableCell>
+                </TableRow>
+                ))
+            )}
           </TableBody>
         </Table>
       </div>

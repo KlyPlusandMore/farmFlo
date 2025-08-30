@@ -52,7 +52,7 @@ const formSchema = z.object({
   id: z.string().optional(),
   date: z.string().min(1, "Date is required"),
   description: z.string().min(1, "Description is required"),
-  category: z.enum(["Feed", "Medication", "Equipment", "Other"]),
+  category: z.enum(["Feed", "Medication", "Equipment", "Other", "Sale"]),
   amount: z.coerce.number().positive("Amount must be positive"),
 });
 
@@ -62,7 +62,7 @@ function ExpenseFormDialog({
   onSave,
   children,
 }: {
-  onSave: (data: Omit<Transaction, 'id'>) => void;
+  onSave: (data: Omit<Transaction, 'id'|'type'>) => void;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -78,7 +78,7 @@ function ExpenseFormDialog({
   });
 
   function onSubmit(values: FormData) {
-    onSave({ ...values, type: "Expense" });
+    onSave({ ...values });
     toast({
       title: "Expense Added",
       description: "The expense has been successfully recorded.",
@@ -133,6 +133,7 @@ function ExpenseFormDialog({
                       <SelectItem value="Feed">Feed</SelectItem>
                       <SelectItem value="Medication">Medication</SelectItem>
                       <SelectItem value="Equipment">Equipment</SelectItem>
+                      <SelectItem value="Sale">Sale</SelectItem>
                       <SelectItem value="Other">Other</SelectItem>
                     </SelectContent>
                   </Select>
@@ -180,7 +181,7 @@ function ExpenseFormDialog({
 
 
 export default function AccountingPage() {
-  const { transactions, addTransaction } = useAccounting();
+  const { transactions, addTransaction, loading } = useAccounting();
 
   const { totalRevenue, totalExpenses, netProfit } = useMemo(() => {
     const totalRevenue = transactions
@@ -193,11 +194,16 @@ export default function AccountingPage() {
     return { totalRevenue, totalExpenses, netProfit };
   }, [transactions]);
   
+  const handleAddExpense = (data: Omit<Transaction, 'id' | 'type'>) => {
+    const type = data.category === 'Sale' ? 'Income' : 'Expense';
+    addTransaction({...data, type});
+  }
+
   return (
     <>
       <PageHeader title="Accounting" description="Track your farm's financial performance.">
-        <ExpenseFormDialog onSave={addTransaction}>
-          <Button>Add Expense</Button>
+        <ExpenseFormDialog onSave={handleAddExpense}>
+          <Button>Add Transaction</Button>
         </ExpenseFormDialog>
       </PageHeader>
       
@@ -245,23 +251,33 @@ export default function AccountingPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {transactions.map((transaction) => (
-              <TableRow key={transaction.id}>
-                <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
-                <TableCell className="font-medium">{transaction.description}</TableCell>
-                <TableCell>
-                  <Badge variant="outline">{transaction.category}</Badge>
-                </TableCell>
-                <TableCell>
-                   <Badge variant={transaction.type === 'Income' ? 'default' : 'destructive'}>
-                    {transaction.type}
-                  </Badge>
-                </TableCell>
-                <TableCell className={`text-right font-semibold ${transaction.type === 'Income' ? 'text-green-600' : 'text-red-600'}`}>
-                  {transaction.type === 'Income' ? '+' : '-'}€{transaction.amount.toFixed(2)}
-                </TableCell>
-              </TableRow>
-            ))}
+             {loading ? (
+                <TableRow>
+                    <TableCell colSpan={5} className="text-center h-24">Loading transactions...</TableCell>
+                </TableRow>
+             ) : transactions.length === 0 ? (
+                <TableRow>
+                    <TableCell colSpan={5} className="text-center h-24">No transactions found.</TableCell>
+                </TableRow>
+             ) : (
+                transactions.map((transaction) => (
+                <TableRow key={transaction.id}>
+                    <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
+                    <TableCell className="font-medium">{transaction.description}</TableCell>
+                    <TableCell>
+                    <Badge variant="outline">{transaction.category}</Badge>
+                    </TableCell>
+                    <TableCell>
+                    <Badge variant={transaction.type === 'Income' ? 'default' : 'destructive'}>
+                        {transaction.type}
+                    </Badge>
+                    </TableCell>
+                    <TableCell className={`text-right font-semibold ${transaction.type === 'Income' ? 'text-green-600' : 'text-red-600'}`}>
+                    {transaction.type === 'Income' ? '+' : '-'}€{transaction.amount.toFixed(2)}
+                    </TableCell>
+                </TableRow>
+                ))
+             )}
           </TableBody>
         </Table>
       </div>
