@@ -14,8 +14,8 @@ const firebaseConfig = {
   projectId: "farm-management-dd1fd",
   storageBucket: "farm-management-dd1fd.appspot.com",
   messagingSenderId: "5001853027",
-  appId: "1:5001853027:web:568783cdc4095edb9be056",
-  measurementId: "G-PSEYH4SJ09"
+  appId: "1:5001853027:web:c2042871bbdfcdc69be056",
+  measurementId: "G-BMRKZ20T45"
 };
 
 // Initialize Firebase
@@ -28,7 +28,11 @@ if (!getApps().length) {
 
 let analytics;
 if (typeof window !== 'undefined') {
-    analytics = getAnalytics(app);
+    try {
+        analytics = getAnalytics(app);
+    } catch (error) {
+        console.log('Failed to initialize Analytics', error);
+    }
 }
 
 // Initialize Cloud Firestore and get a reference to the service
