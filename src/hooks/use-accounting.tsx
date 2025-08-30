@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { collection, onSnapshot, addDoc, query, where, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Transaction } from '@/lib/types';
 import { useAuth } from './use-auth';
@@ -29,7 +29,7 @@ export const AccountingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     
     setLoading(true);
     const transactionsCollection = collection(db, 'transactions');
-    const q = query(transactionsCollection, where("userId", "==", user.uid), orderBy('date', 'desc'));
+    const q = query(transactionsCollection, where("userId", "==", user.uid));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const transactionsData = snapshot.docs.map(doc => ({

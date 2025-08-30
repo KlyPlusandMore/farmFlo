@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Invoice, InvoiceLineItem } from '@/lib/types';
 import { useAuth } from './use-auth';
@@ -39,7 +39,7 @@ export const InvoicesProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     setLoading(true);
     const invoicesCollection = collection(db, 'invoices');
-    const q = query(invoicesCollection, where("userId", "==", user.uid), orderBy('issueDate', 'desc'));
+    const q = query(invoicesCollection, where("userId", "==", user.uid));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
         const invoicesData = snapshot.docs.map(doc => ({
