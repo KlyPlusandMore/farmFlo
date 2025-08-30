@@ -10,7 +10,7 @@ interface PageHeaderProps {
 }
 
 export function PageHeaderTitle({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex items-center gap-2", className)} {...props} />;
+  return <div className={cn("flex items-center gap-2 text-2xl font-bold font-headline tracking-tight", className)} {...props} />;
 }
 
 export function PageHeader({ title, description, children, className }: PageHeaderProps) {

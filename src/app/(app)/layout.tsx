@@ -54,7 +54,6 @@ function SidebarItems() {
             <Rabbit className="text-primary-foreground h-6 w-6" />
           </div>
           <h1 className="text-2xl font-bold font-headline text-foreground group-data-[state=collapsed]:hidden">KPM Farm</h1>
-          <SidebarTrigger className="ml-auto group-data-[state=collapsed]:hidden" />
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -122,7 +121,13 @@ function AppLayout({ children }: { children: React.ReactNode }) {
         <PageHeader>
             <PageHeaderTitle>
                 <SidebarTrigger className="md:hidden" />
-                {getPageTitle()}
+                <div className="hidden md:flex items-center gap-2">
+                  <SidebarTrigger />
+                  <h1 className="text-2xl font-bold font-headline tracking-tight">{getPageTitle()}</h1>
+                </div>
+                 <div className="md:hidden">
+                    {getPageTitle()}
+                 </div>
             </PageHeaderTitle>
         </PageHeader>
         <main className="p-4 sm:p-6 lg:p-8 bg-background min-h-screen pt-0">
