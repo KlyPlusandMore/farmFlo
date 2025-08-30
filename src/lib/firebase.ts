@@ -9,13 +9,13 @@ import { getAnalytics } from "firebase/analytics";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyBwy4_lJxdliBHE10fCT-Z7S5_Sz7t1XrE",
-  authDomain: "farm-management-dd1fd.firebaseapp.com",
-  projectId: "farm-management-dd1fd",
-  storageBucket: "farm-management-dd1fd.firebasestorage.app",
-  messagingSenderId: "5001853027",
-  appId: "1:5001853027:web:c2042871bbdfcdc69be056",
-  measurementId: "G-BMRKZ20T45"
+  apiKey: "AIzaSyBbh0qJsBYdLFrrj-PIpM_39u3zVCIPGs4",
+  authDomain: "geopro-4f941.firebaseapp.com",
+  projectId: "geopro-4f941",
+  storageBucket: "geopro-4f941.firebasestorage.app",
+  messagingSenderId: "61244887620",
+  appId: "1:61244887620:web:2db5cf4162cc0de631e211",
+  measurementId: "G-DPHSKZ1XLV"
 };
 
 // Initialize Firebase
