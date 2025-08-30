@@ -73,7 +73,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <PageHeader title="Dashboard" description="Welcome back, here is a summary of your farm." />
+      <PageHeader title="Welcome back" description="Here is a summary of your farm." className="hidden md:flex"/>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>

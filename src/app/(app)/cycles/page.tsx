@@ -74,7 +74,7 @@ function AnimalFormDialog({
   });
 
   function onSubmit(values: FormData) {
-    addAnimal({ ...values, status: "Healthy" });
+    addAnimal({ ...values, birthDate: new Date(Date.now() - values.age * 30 * 24 * 60 * 60 * 1000).toISOString(), status: "Healthy" });
     toast({
       title: `${values.species} Added`,
       description: `${values.name} has been successfully added to lot ${values.lot}.`,
@@ -220,7 +220,7 @@ export default function CyclesPage() {
 
   return (
     <>
-      <PageHeader title="Production Cycles" description="Track the lifecycle of each animal group.">
+      <PageHeader title="Production Cycles" description="Track the lifecycle of each animal group." className="hidden md:flex">
         <Button onClick={() => setIsFormOpen(true)}>Start New Cycle</Button>
       </PageHeader>
 

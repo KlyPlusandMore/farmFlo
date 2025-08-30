@@ -16,7 +16,6 @@ import {
   SidebarFooter,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
   LayoutDashboard,
   Rabbit,
@@ -29,10 +28,10 @@ import {
   LineChart,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { AccountingProvider } from "@/hooks/use-accounting";
 import { InvoicesProvider } from "@/hooks/use-invoices";
 import { AnimalsProvider } from "@/hooks/use-animals";
+import { PageHeader, PageHeaderTitle } from "@/components/page-header";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -104,29 +103,29 @@ function SidebarItems() {
 }
 
 function AppLayout({ children }: { children: React.ReactNode }) {
-  const isMobile = useIsMobile();
-  const [openMobile, setOpenMobile] = React.useState(false)
-
-  if (isMobile === null) {
-    return null; // or a loading skeleton
-  }
+  const pathname = usePathname();
+  const getPageTitle = () => {
+    if (pathname.startsWith('/animals/')) return "Animal Details";
+    if (pathname.startsWith('/invoices/new')) return "Create Invoice";
+    if (pathname.startsWith('/invoices/')) return "Invoice Details";
+    const item = navItems.find(item => pathname.startsWith(item.href));
+    return item?.label || 'Dashboard';
+  };
   
   return (
     <>
-      {isMobile ? (
-        <Sheet open={openMobile} onOpenChange={setOpenMobile}>
-          <SheetContent side="left" className="w-[18rem] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden">
-            <SidebarItems />
-          </SheetContent>
-        </Sheet>
-      ) : (
-        <Sidebar>
+      <Sidebar>
           <SidebarItems />
-        </Sidebar>
-      )}
+      </Sidebar>
 
       <SidebarInset>
-        <main className="p-4 sm:p-6 lg:p-8 bg-background min-h-screen">
+        <PageHeader>
+            <PageHeaderTitle>
+                <SidebarTrigger className="md:hidden" />
+                {getPageTitle()}
+            </PageHeaderTitle>
+        </PageHeader>
+        <main className="p-4 sm:p-6 lg:p-8 bg-background min-h-screen pt-0">
           {children}
         </main>
       </SidebarInset>

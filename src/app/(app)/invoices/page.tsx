@@ -59,7 +59,7 @@ export default function InvoicesPage() {
 
   return (
     <>
-      <PageHeader title="Invoices" description="Manage all your sales invoices.">
+      <PageHeader title="Sales Invoices" description="Manage all your sales invoices." className="hidden md:flex">
         <Link href="/invoices/new">
           <Button>Create Invoice</Button>
         </Link>

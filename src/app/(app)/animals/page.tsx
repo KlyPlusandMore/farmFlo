@@ -141,7 +141,7 @@ function AnimalFormDialog({
   const status = form.watch("status");
 
   async function onSave(data: FormData) {
-     if (initialData && data.id) { // Update
+     if (mode === "edit" && initialData && data.id) { // Update
       const originalAnimal = initialData;
       await updateAnimal({ ...data, id: data.id });
       
@@ -465,8 +465,8 @@ function AnimalsPageContent() {
   }
   
   const pageTitle = useMemo(() => {
-    if (speciesFilter) return `${speciesFilter} Management`;
-    if (lotFilter) return `Lot ${lotFilter} Animals`;
+    if (speciesFilter) return `${speciesFilter}s`;
+    if (lotFilter) return `Lot ${lotFilter}`;
     return "Animal Management";
   }, [speciesFilter, lotFilter]);
 
@@ -479,7 +479,7 @@ function AnimalsPageContent() {
 
   return (
     <>
-      <PageHeader title={pageTitle} description={pageDescription}>
+      <PageHeader title={pageTitle} description={pageDescription} className="hidden md:flex">
         <AnimalFormDialog mode="add" onSuccess={() => setForceRender(Math.random())}>
           <Button>Add Animal</Button>
         </AnimalFormDialog>

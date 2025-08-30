@@ -201,7 +201,7 @@ export default function AccountingPage() {
 
   return (
     <>
-      <PageHeader title="Accounting" description="Track your farm's financial performance.">
+      <PageHeader title="Financials" description="Track your farm's financial performance." className="hidden md:flex">
         <ExpenseFormDialog onSave={handleAddExpense}>
           <Button>Add Transaction</Button>
         </ExpenseFormDialog>

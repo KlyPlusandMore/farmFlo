@@ -8,6 +8,7 @@ export default function AiInsightsPage() {
       <PageHeader 
         title="AI-Powered Insights"
         description="Generate predictive health alerts for your animals using AI."
+        className="hidden md:flex"
       />
       <AiInsightsForm />
     </>

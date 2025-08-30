@@ -57,7 +57,7 @@ export default function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Settings" description="Manage your application settings and preferences." />
+      <PageHeader title="Settings" description="Manage your application settings and preferences." className="hidden md:flex" />
       <div className="max-w-4xl mx-auto">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">

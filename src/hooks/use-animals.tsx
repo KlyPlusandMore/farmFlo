@@ -8,7 +8,7 @@ import type { Animal } from '@/lib/types';
 
 interface AnimalsContextType {
   animals: Animal[];
-  addAnimal: (animal: Omit<Animal, 'id'>) => Promise<void>;
+  addAnimal: (animal: Omit<Animal, 'id' | 'gender'>) => Promise<void>;
   updateAnimal: (animal: Animal) => Promise<void>;
   deleteAnimal: (id: string) => Promise<void>;
   getAnimal: (id: string) => Animal | undefined;
@@ -63,9 +63,10 @@ export const AnimalsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return () => unsubscribe();
   }, []);
   
-  const addAnimal = useCallback(async (animalData: Omit<Animal, 'id'>) => {
+  const addAnimal = useCallback(async (animalData: Omit<Animal, 'id' | 'gender'>) => {
     try {
-        await addDoc(collection(db, 'animals'), animalData);
+        const gender = Math.random() > 0.5 ? "Male" : "Female";
+        await addDoc(collection(db, 'animals'), { ...animalData, gender });
     } catch (error) {
         console.error("Error adding animal: ", error);
     }
@@ -75,7 +76,7 @@ export const AnimalsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const animalDocRef = doc(db, 'animals', updatedAnimal.id);
     try {
         const { id, ...dataToUpdate } = updatedAnimal;
-        await updateDoc(animalDocRef, dataToUpdate);
+        await updateDoc(animalDocRef, dataToUpdate as DocumentData);
     } catch (error) {
         console.error("Error updating animal: ", error);
     }

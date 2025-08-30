@@ -15,7 +15,7 @@ export default function EditInvoicePage() {
   if (!invoice) {
     return (
         <>
-            <PageHeader title="Invoice Not Found" />
+            <PageHeader title="Invoice Not Found" className="hidden md:flex" />
             <p>The invoice you are looking for does not exist.</p>
         </>
     )

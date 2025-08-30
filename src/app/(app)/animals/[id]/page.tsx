@@ -58,7 +58,7 @@ export default function AnimalDetailPage() {
   if (!animal) {
     return (
         <>
-            <PageHeader title="Animal Not Found" />
+            <PageHeader title="Animal Not Found" className="hidden md:flex"/>
             <p>The animal you are looking for does not exist.</p>
         </>
     )
@@ -67,8 +67,9 @@ export default function AnimalDetailPage() {
   return (
     <>
       <PageHeader 
-        title={`${animal.name} (${animal.id})`}
+        title={`${animal.name} (${animal.id.substring(0,6)}...)`}
         description={`Detailed information for ${animal.breed} ${animal.species}.`}
+        className="hidden md:flex"
       >
         <Button onClick={() => router.back()} variant="outline">
             <ArrowLeft className="mr-2 h-4 w-4" />

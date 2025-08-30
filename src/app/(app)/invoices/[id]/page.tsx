@@ -37,7 +37,7 @@ export default function InvoiceDetailPage() {
   if (!invoice) {
     return (
         <>
-            <PageHeader title="Invoice Not Found" />
+            <PageHeader title="Invoice Not Found" className="hidden md:flex" />
             <p>The invoice you are looking for does not exist.</p>
         </>
     )
@@ -49,7 +49,7 @@ export default function InvoiceDetailPage() {
 
   return (
     <>
-      <PageHeader title={`Invoice ${invoice.id}`} description={`Details for invoice sent to ${invoice.clientName}.`}>
+      <PageHeader title={`Invoice ${invoice.id.substring(0,8)}...`} description={`Details for invoice sent to ${invoice.clientName}.`} className="hidden md:flex">
         <Button onClick={handlePrint} variant="outline" className="print:hidden">
             <Printer className="mr-2 h-4 w-4" />
             Print / Save PDF

@@ -332,7 +332,7 @@ export default function InventoryPage() {
 
   return (
     <>
-      <PageHeader title="Inventory" description="Manage your inventory of feed, medication, and equipment.">
+      <PageHeader title="Inventory Management" description="Manage your inventory of feed, medication, and equipment." className="hidden md:flex">
         <InventoryFormDialog mode="add" onSave={handleSaveItem}>
           <Button>Add Item</Button>
         </InventoryFormDialog>

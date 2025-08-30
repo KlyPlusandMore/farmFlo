@@ -1,3 +1,4 @@
+
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText } from "lucide-react";
@@ -5,7 +6,7 @@ import { FileText } from "lucide-react";
 export default function ReportsPage() {
   return (
     <>
-      <PageHeader title="Reports" description="Generate and view reports on productivity, profitability, and more." />
+      <PageHeader title="Reports" description="Generate and view reports on productivity, profitability, and more." className="hidden md:flex" />
       <div className="flex items-center justify-center h-96">
         <Card className="w-full max-w-md text-center">
             <CardHeader>
