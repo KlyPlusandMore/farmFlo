@@ -131,7 +131,7 @@ function InventoryFormDialog({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 overflow-y-auto max-h-[70vh] p-1">
             <FormField
               control={form.control}
               name="name"
@@ -396,3 +396,5 @@ export default function InventoryPage() {
     </>
   );
 }
+
+    
