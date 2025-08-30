@@ -12,7 +12,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyBwy4_lJxdliBHE10fCT-Z7S5_Sz7t1XrE",
   authDomain: "farm-management-dd1fd.firebaseapp.com",
   projectId: "farm-management-dd1fd",
-  storageBucket: "farm-management-dd1fd.appspot.com",
+  storageBucket: "farm-management-dd1fd.firebasestorage.app",
   messagingSenderId: "5001853027",
   appId: "1:5001853027:web:c2042871bbdfcdc69be056",
   measurementId: "G-BMRKZ20T45"
