@@ -433,7 +433,7 @@ function AnimalsPageContent() {
   const searchParams = useSearchParams();
   const speciesFilter = searchParams.get("species");
   const lotFilter = searchParams.get("lot");
-  const [, setForceRender] = useState(0);
+  const [forceRender, setForceRender] = useState(0);
 
   const getAgeInMonths = (birthDate: string) => {
     const birth = new Date(birthDate);
