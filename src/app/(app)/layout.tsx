@@ -106,8 +106,9 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   const getPageTitle = () => {
     if (pathname.startsWith('/animals/')) return "Animal Details";
     if (pathname.startsWith('/invoices/new')) return "Create Invoice";
+    if (pathname.startsWith('/invoices/edit')) return "Edit Invoice";
     if (pathname.startsWith('/invoices/')) return "Invoice Details";
-    const item = navItems.find(item => pathname.startsWith(item.href));
+    const item = navItems.find(item => pathname.startsWith(item.href) && item.href !== '/');
     return item?.label || 'Dashboard';
   };
   
@@ -120,14 +121,10 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarInset>
         <PageHeader>
             <PageHeaderTitle>
-                <SidebarTrigger className="md:hidden" />
-                <div className="hidden md:flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <SidebarTrigger />
                   <h1 className="text-2xl font-bold font-headline tracking-tight">{getPageTitle()}</h1>
                 </div>
-                 <div className="md:hidden">
-                    {getPageTitle()}
-                 </div>
             </PageHeaderTitle>
         </PageHeader>
         <main className="p-4 sm:p-6 lg:p-8 bg-background min-h-screen pt-0">
