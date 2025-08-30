@@ -8,7 +8,7 @@ import type { Animal } from '@/lib/types';
 
 interface AnimalsContextType {
   animals: Animal[];
-  addAnimal: (animal: Omit<Animal, 'id' | 'gender'>) => Promise<void>;
+  addAnimal: (animal: Omit<Animal, 'id'|'gender'>) => Promise<void>;
   updateAnimal: (animal: Animal) => Promise<void>;
   deleteAnimal: (id: string) => Promise<void>;
   getAnimal: (id: string) => Animal | undefined;
@@ -25,67 +25,71 @@ const initialAnimals: Animal[] = [
     { id: "A005", name: "Peter", species: "Rabbit", breed: "New Zealand White", birthDate: "2024-03-10", gender: "Male", weight: 3, lot: "L002", status: "Healthy" },
 ];
 
-async function addInitialData(animalsCollection: any) {
-    const promises = initialAnimals.map(animal => {
-        const { id, ...animalData } = animal;
-        // Use the predefined ID for the document ID in Firestore
-        return addDoc(animalsCollection, animalData);
-    });
-    await Promise.all(promises);
-}
-
-
 export const AnimalsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Temporarily load initial data to bypass Firestore permission issues
+    setAnimals(initialAnimals);
+    setLoading(false);
+
+    // The code below connects to Firestore. It is commented out until permissions are fixed.
+    /*
     const animalsCollection = collection(db, 'animals');
     
     const unsubscribe = onSnapshot(animalsCollection, (snapshot) => {
         if (snapshot.empty) {
-            // If the collection is empty, add the initial data.
-            // This is for demonstration purposes. In a real app, you might not want to do this.
-            addInitialData(collection(db, 'animals')).then(() => setLoading(false));
+            setAnimals(initialAnimals);
         } else {
             const animalsData = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             } as Animal));
             setAnimals(animalsData);
-            setLoading(false);
         }
+        setLoading(false);
     }, (error) => {
         console.error("Error fetching animals from Firestore: ", error);
+        // Fallback to initial data on error
+        setAnimals(initialAnimals);
         setLoading(false);
     });
 
     return () => unsubscribe();
+    */
   }, []);
   
   const addAnimal = useCallback(async (animalData: Omit<Animal, 'id' | 'gender'>) => {
     try {
         const gender = Math.random() > 0.5 ? "Male" : "Female";
-        await addDoc(collection(db, 'animals'), { ...animalData, gender });
+        const newAnimal = { ...animalData, gender, id: crypto.randomUUID() } as Animal;
+        setAnimals(prev => [newAnimal, ...prev]);
+        // The line below connects to Firestore. It is commented out until permissions are fixed.
+        // await addDoc(collection(db, 'animals'), { ...animalData, gender });
     } catch (error) {
         console.error("Error adding animal: ", error);
     }
   }, []);
 
   const updateAnimal = useCallback(async (updatedAnimal: Animal) => {
-    const animalDocRef = doc(db, 'animals', updatedAnimal.id);
     try {
-        const { id, ...dataToUpdate } = updatedAnimal;
-        await updateDoc(animalDocRef, dataToUpdate as DocumentData);
+        setAnimals(prev => prev.map(a => a.id === updatedAnimal.id ? updatedAnimal : a));
+        // The lines below connect to Firestore. They are commented out until permissions are fixed.
+        // const animalDocRef = doc(db, 'animals', updatedAnimal.id);
+        // const { id, ...dataToUpdate } = updatedAnimal;
+        // await updateDoc(animalDocRef, dataToUpdate as DocumentData);
     } catch (error) {
         console.error("Error updating animal: ", error);
     }
   }, []);
 
   const deleteAnimal = useCallback(async (id: string) => {
-    const animalDocRef = doc(db, 'animals', id);
     try {
-        await deleteDoc(animalDocRef);
+        setAnimals(prev => prev.filter(a => a.id !== id));
+        // The line below connects to Firestore. It is commented out until permissions are fixed.
+        // const animalDocRef = doc(db, 'animals', id);
+        // await deleteDoc(animalDocRef);
     } catch (error) {
         console.error("Error deleting animal: ", error);
     }

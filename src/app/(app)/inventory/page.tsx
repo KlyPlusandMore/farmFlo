@@ -78,6 +78,12 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
+const initialInventory: InventoryItem[] = [
+    { id: "I001", name: "Bovine Feed", category: "Feed", quantity: 50, unit: "bags", lowStockThreshold: 10, purchasePrice: 500 },
+    { id: "I002", name: "General Antibiotic", category: "Medication", quantity: 5, unit: "bottles", lowStockThreshold: 2 },
+    { id: "I003", name: "Fencing Wire", category: "Equipment", quantity: 2, unit: "rolls", lowStockThreshold: 1 },
+];
+
 function InventoryFormDialog({
   mode,
   initialData,
@@ -261,6 +267,12 @@ export default function InventoryPage() {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Temporarily load initial data to bypass Firestore permission issues
+    setInventory(initialInventory);
+    setLoading(false);
+
+    // The code below connects to Firestore. It is commented out until permissions are fixed.
+    /*
     const inventoryCollection = collection(db, 'inventory');
     const unsubscribe = onSnapshot(inventoryCollection, (snapshot) => {
       const inventoryData = snapshot.docs.map(doc => ({
@@ -271,10 +283,12 @@ export default function InventoryPage() {
       setLoading(false);
     }, (error) => {
       console.error("Error fetching inventory from Firestore: ", error);
+      setInventory(initialInventory);
       setLoading(false);
     });
 
     return () => unsubscribe();
+    */
   }, []);
 
   async function handleSaveItem(data: Omit<InventoryItem, 'id'> | InventoryItem) {
@@ -282,9 +296,7 @@ export default function InventoryPage() {
       const originalItem = inventory.find(i => i.id === data.id);
       const quantityAdded = data.quantity - (originalItem?.quantity || 0);
       
-      const { id, ...dataToUpdate } = data;
-      const itemDocRef = doc(db, 'inventory', id);
-      await updateDoc(itemDocRef, dataToUpdate);
+      setInventory(prev => prev.map(item => item.id === data.id ? data as InventoryItem : item));
 
       if (data.purchasePrice && data.purchasePrice > 0 && quantityAdded > 0) {
         addTransaction({
@@ -299,10 +311,15 @@ export default function InventoryPage() {
             description: `Purchase of ${data.name} for €${data.purchasePrice} added to accounting.`
         });
       }
+      // Firestore update logic commented out
+      // const { id, ...dataToUpdate } = data;
+      // const itemDocRef = doc(db, 'inventory', id);
+      // await updateDoc(itemDocRef, dataToUpdate);
 
     } else { // Create
-      const { id, ...dataToAdd } = data;
-      const newItemRef = await addDoc(collection(db, 'inventory'), dataToAdd);
+      const newId = `I${(Math.random() * 1000).toFixed(0).padStart(3,'0')}`;
+      const newItem: InventoryItem = { ...data, id: newId } as InventoryItem;
+      setInventory(prev => [newItem, ...prev]);
 
        if (data.purchasePrice && data.purchasePrice > 0) {
         addTransaction({
@@ -317,12 +334,17 @@ export default function InventoryPage() {
             description: `Purchase of ${data.name} for €${data.purchasePrice} added to accounting.`
         });
       }
+      // Firestore add logic commented out
+      // const { id, ...dataToAdd } = data;
+      // const newItemRef = await addDoc(collection(db, 'inventory'), dataToAdd);
     }
   }
 
   async function handleDeleteItem(itemId: string) {
-    const itemDocRef = doc(db, 'inventory', itemId);
-    await deleteDoc(itemDocRef);
+    setInventory(prev => prev.filter(item => item.id !== itemId));
+    // Firestore delete logic commented out
+    // const itemDocRef = doc(db, 'inventory', itemId);
+    // await deleteDoc(itemDocRef);
     toast({
       title: "Item Deleted",
       description: "The item has been removed from the inventory.",
