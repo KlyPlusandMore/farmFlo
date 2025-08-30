@@ -72,6 +72,8 @@ function ExpenseFormDialog({
     defaultValues: {
       date: new Date().toISOString().split("T")[0],
       category: "Other",
+      description: "",
+      amount: 0,
     },
   });
 
@@ -101,7 +103,7 @@ function ExpenseFormDialog({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 overflow-y-auto max-h-[70vh] p-1">
             <FormField
               control={form.control}
               name="description"
@@ -166,7 +168,7 @@ function ExpenseFormDialog({
                   )}
                 />
             </div>
-            <DialogFooter>
+            <DialogFooter className="pt-4">
               <Button type="submit">Save Expense</Button>
             </DialogFooter>
           </form>
