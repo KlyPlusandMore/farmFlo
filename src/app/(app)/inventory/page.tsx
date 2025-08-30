@@ -222,7 +222,7 @@ function InventoryFormDialog({
                 </FormItem>
               )}
             />
-            <DialogFooter>
+            <DialogFooter className="pt-4">
               <Button type="submit">Save Changes</Button>
             </DialogFooter>
           </form>
