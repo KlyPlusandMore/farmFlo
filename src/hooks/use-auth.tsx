@@ -47,6 +47,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signInWithGoogle = () => {
     const provider = new GoogleAuthProvider();
+    // Explicitly setting the auth domain for the provider
+    provider.setCustomParameters({
+      'auth_domain': auth.config.authDomain
+    });
     return signInWithPopup(auth, provider);
   };
 
