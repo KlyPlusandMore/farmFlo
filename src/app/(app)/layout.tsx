@@ -2,8 +2,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import React from "react";
+import { usePathname, useRouter } from "next/navigation";
+import React, { useEffect } from "react";
 import {
   SidebarProvider,
   Sidebar,
@@ -26,12 +26,15 @@ import {
   CircleDollarSign,
   FileText,
   LineChart,
+  LogOut,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AccountingProvider } from "@/hooks/use-accounting";
 import { InvoicesProvider } from "@/hooks/use-invoices";
 import { AnimalsProvider } from "@/hooks/use-animals";
 import { PageHeader, PageHeaderTitle } from "@/components/page-header";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -46,6 +49,14 @@ const navItems = [
 
 function SidebarItems() {
   const pathname = usePathname();
+  const { user, signOut } = useAuth();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  }
+
   return (
     <>
       <SidebarHeader className="p-4">
@@ -82,15 +93,20 @@ function SidebarItems() {
               </SidebarMenuButton>
             </Link>
           </SidebarMenuItem>
+           <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Logout" onClick={handleSignOut}>
+                    <LogOut /> <span>Logout</span>
+                </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
               <SidebarMenuButton tooltip="Profile">
                   <div className="flex items-center gap-2 w-full">
                       <Avatar className="h-7 w-7">
-                          <AvatarImage src="https://placehold.co/40x40.png" alt="User" data-ai-hint="user avatar"/>
-                          <AvatarFallback>U</AvatarFallback>
+                          <AvatarImage src={user?.photoURL || "https://placehold.co/40x40.png"} alt={user?.displayName || 'User'} data-ai-hint="user avatar"/>
+                          <AvatarFallback>{user?.email?.[0].toUpperCase() || 'U'}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 overflow-hidden">
-                          <p className="truncate text-sm font-medium">Farmer</p>
+                          <p className="truncate text-sm font-medium">{user?.displayName || user?.email}</p>
                       </div>
                   </div>
               </SidebarMenuButton>
@@ -103,12 +119,29 @@ function SidebarItems() {
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  if (loading || !user) {
+    return (
+        <div className="flex h-screen items-center justify-center">
+            <p>Loading application...</p>
+        </div>
+    );
+  }
+
   const getPageTitle = () => {
     if (pathname.startsWith('/animals/')) return "Animal Details";
     if (pathname.startsWith('/invoices/new')) return "Create Invoice";
     if (pathname.startsWith('/invoices/edit')) return "Edit Invoice";
     if (pathname.startsWith('/invoices/')) return "Invoice Details";
-    const item = navItems.find(item => pathname.startsWith(item.href) && item.href !== '/');
+    const item = navItems.find(item => pathname.startsWith(item.href) && (item.href !== '/' || pathname === '/'));
     return item?.label || 'Dashboard';
   };
   
@@ -122,10 +155,13 @@ function AppLayout({ children }: { children: React.ReactNode }) {
         <PageHeader>
             <PageHeaderTitle>
                 <div className="flex items-center gap-2">
-                  <SidebarTrigger />
+                  <SidebarTrigger className="md:hidden" />
                   <h1 className="text-2xl font-bold font-headline tracking-tight">{getPageTitle()}</h1>
                 </div>
             </PageHeaderTitle>
+            <div className="hidden md:flex items-center gap-2">
+                 <SidebarTrigger />
+            </div>
         </PageHeader>
         <main className="p-4 sm:p-6 lg:p-8 bg-background min-h-screen pt-0">
           {children}

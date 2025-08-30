@@ -4,6 +4,7 @@ export type Species = "Bovine" | "Porcine" | "Poultry" | "Caprine" | "Rabbit";
 
 export interface Animal {
   id: string;
+  userId: string;
   name: string;
   species: Species;
   breed: string;
@@ -18,6 +19,7 @@ export interface Animal {
 
 export interface InventoryItem {
   id: string;
+  userId: string;
   name:string;
   category: "Feed" | "Medication" | "Equipment";
   quantity: number;
@@ -44,6 +46,7 @@ export type ProductionCycle = {
 
 export type Transaction = {
   id: string;
+  userId: string;
   date: string;
   description: string;
   category: "Sale" | "Feed" | "Medication" | "Equipment" | "Other";
@@ -61,6 +64,7 @@ export interface InvoiceLineItem {
 
 export interface Invoice {
   id: string;
+  userId: string;
   clientName: string;
   clientEmail: string;
   issueDate: string;

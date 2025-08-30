@@ -2,14 +2,15 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Invoice, InvoiceLineItem } from '@/lib/types';
+import { useAuth } from './use-auth';
 
 interface InvoicesContextType {
   invoices: Invoice[];
   getInvoice: (id: string) => Invoice | undefined;
-  addInvoice: (invoice: Omit<Invoice, 'id' | 'subtotal' | 'tax' | 'total'>) => Promise<Invoice | undefined>;
+  addInvoice: (invoice: Omit<Invoice, 'id' | 'subtotal' | 'tax' | 'total' | 'userId'>) => Promise<Invoice | undefined>;
   updateInvoice: (invoice: Invoice) => Promise<void>;
   deleteInvoice: (id: string) => Promise<void>;
   loading: boolean;
@@ -24,46 +25,21 @@ const calculateTotals = (lineItems: InvoiceLineItem[]) => {
     return { subtotal, tax, total };
 }
 
-const initialInvoices: Invoice[] = [
-    {
-        id: "INV001",
-        clientName: "Local Restaurant",
-        clientEmail: "buyer@example.com",
-        issueDate: "2024-05-15",
-        dueDate: "2024-06-14",
-        lineItems: [{ id: "LI01", description: "Sale of animal A004", quantity: 1, unitPrice: 300, total: 300 }],
-        subtotal: 300,
-        tax: 60,
-        total: 360,
-        status: "Paid",
-    },
-    {
-        id: "INV002",
-        clientName: "Butcher Shop",
-        clientEmail: "butcher@example.com",
-        issueDate: "2024-04-20",
-        dueDate: "2024-05-20",
-        lineItems: [{ id: "LI02", description: "Sale of 5 Yorkshire pigs", quantity: 5, unitPrice: 150, total: 750 }],
-        subtotal: 750,
-        tax: 150,
-        total: 900,
-        status: "Overdue",
-    }
-];
-
 export const InvoicesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
-    // Temporarily load initial data to bypass Firestore permission issues
-    setInvoices(initialInvoices);
-    setLoading(false);
+    if (!user) {
+        setInvoices([]);
+        setLoading(false);
+        return;
+    }
 
-    // The code below connects to Firestore. It is commented out until permissions are fixed.
-    /*
+    setLoading(true);
     const invoicesCollection = collection(db, 'invoices');
-    const q = query(invoicesCollection, orderBy('issueDate', 'desc'));
+    const q = query(invoicesCollection, where("userId", "==", user.uid), orderBy('issueDate', 'desc'));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
         const invoicesData = snapshot.docs.map(doc => ({
@@ -74,56 +50,48 @@ export const InvoicesProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setLoading(false);
     }, (error) => {
         console.error("Error fetching invoices from Firestore: ", error);
-        setInvoices(initialInvoices);
+        setInvoices([]);
         setLoading(false);
     });
 
     return () => unsubscribe();
-    */
-  }, []);
+  }, [user]);
 
-  const addInvoice = useCallback(async (invoiceData: Omit<Invoice, 'id' | 'subtotal' | 'tax' | 'total'>) => {
+  const addInvoice = useCallback(async (invoiceData: Omit<Invoice, 'id' | 'subtotal' | 'tax' | 'total' | 'userId'>) => {
+    if (!user) return undefined;
+    
     const totals = calculateTotals(invoiceData.lineItems);
-    const newInvoice: Invoice = {
-      ...invoiceData,
-      ...totals,
-      id: `INV${(Math.random() * 1000).toFixed(0).padStart(3,'0')}`,
-    };
     try {
-        setInvoices(prev => [newInvoice, ...prev]);
-        // The line below connects to Firestore. It is commented out until permissions are fixed.
-        // const docRef = await addDoc(collection(db, 'invoices'), { ...invoiceData, ...totals });
-        return { ...newInvoice, id: newInvoice.id };
+        const docRef = await addDoc(collection(db, 'invoices'), { ...invoiceData, ...totals, userId: user.uid });
+        return { ...invoiceData, ...totals, id: docRef.id, userId: user.uid } as Invoice;
     } catch (error) {
         console.error("Error adding invoice: ", error);
         return undefined;
     }
-  }, []);
+  }, [user]);
 
   const updateInvoice = useCallback(async (updatedInvoice: Invoice) => {
+    if (!user) return;
     try {
         const totals = calculateTotals(updatedInvoice.lineItems);
         const finalInvoice = { ...updatedInvoice, ...totals };
-        setInvoices(prev => prev.map(inv => inv.id === finalInvoice.id ? finalInvoice : inv));
-        // The lines below connect to Firestore. They are commented out until permissions are fixed.
-        // const invoiceDocRef = doc(db, 'invoices', updatedInvoice.id);
-        // const { id, ...dataToUpdate } = finalInvoice;
-        // await updateDoc(invoiceDocRef, dataToUpdate);
+        const invoiceDocRef = doc(db, 'invoices', updatedInvoice.id);
+        const { id, ...dataToUpdate } = finalInvoice;
+        await updateDoc(invoiceDocRef, dataToUpdate);
     } catch (error) {
         console.error("Error updating invoice: ", error);
     }
-  }, []);
+  }, [user]);
 
   const deleteInvoice = useCallback(async (id: string) => {
+    if (!user) return;
     try {
-        setInvoices(prev => prev.filter(inv => inv.id !== id));
-        // The line below connects to Firestore. It is commented out until permissions are fixed.
-        // const invoiceDocRef = doc(db, 'invoices', id);
-        // await deleteDoc(invoiceDocRef);
+        const invoiceDocRef = doc(db, 'invoices', id);
+        await deleteDoc(invoiceDocRef);
     } catch (error) {
         console.error("Error deleting invoice: ", error);
     }
-  }, []);
+  }, [user]);
 
   const getInvoice = useCallback((id: string) => {
     return invoices.find(inv => inv.id === id);

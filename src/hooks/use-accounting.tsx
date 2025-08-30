@@ -2,37 +2,34 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { collection, onSnapshot, addDoc, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Transaction } from '@/lib/types';
+import { useAuth } from './use-auth';
 
 interface AccountingContextType {
   transactions: Transaction[];
-  addTransaction: (transaction: Omit<Transaction, 'id'>) => Promise<void>;
+  addTransaction: (transaction: Omit<Transaction, 'id' | 'userId'>) => Promise<void>;
   loading: boolean;
 }
 
 const AccountingContext = createContext<AccountingContextType | undefined>(undefined);
 
-const initialTransactions: Transaction[] = [
-    { id: "T001", date: "2024-05-15", description: "Sale of animal A004", category: "Sale", type: "Income", amount: 300 },
-    { id: "T002", date: "2024-05-10", description: "Purchase of 20 bags of bovine feed", category: "Feed", type: "Expense", amount: 500 },
-    { id: "T003", date: "2024-05-08", description: "Veterinary visit for Lot L001", category: "Medication", type: "Expense", amount: 150 },
-];
-
 export const AccountingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
-    // Temporarily load initial data to bypass Firestore permission issues
-    setTransactions(initialTransactions);
-    setLoading(false);
-
-    // The code below connects to Firestore. It is commented out until permissions are fixed.
-    /*
+    if (!user) {
+      setTransactions([]);
+      setLoading(false);
+      return;
+    }
+    
+    setLoading(true);
     const transactionsCollection = collection(db, 'transactions');
-    const q = query(transactionsCollection, orderBy('date', 'desc'));
+    const q = query(transactionsCollection, where("userId", "==", user.uid), orderBy('date', 'desc'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const transactionsData = snapshot.docs.map(doc => ({
@@ -43,24 +40,21 @@ export const AccountingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setLoading(false);
     }, (error) => {
       console.error("Error fetching transactions from Firestore: ", error);
-      setTransactions(initialTransactions);
+      setTransactions([]);
       setLoading(false);
     });
 
     return () => unsubscribe();
-    */
-  }, []);
+  }, [user]);
 
-  const addTransaction = useCallback(async (transactionData: Omit<Transaction, 'id'>) => {
+  const addTransaction = useCallback(async (transactionData: Omit<Transaction, 'id' | 'userId'>) => {
+    if (!user) return;
     try {
-        const newTransaction = { ...transactionData, id: crypto.randomUUID() };
-        setTransactions(prev => [newTransaction, ...prev].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        // The line below connects to Firestore. It is commented out until permissions are fixed.
-        // await addDoc(collection(db, 'transactions'), transactionData);
+        await addDoc(collection(db, 'transactions'), { ...transactionData, userId: user.uid });
     } catch (error) {
       console.error("Error adding transaction: ", error);
     }
-  }, []);
+  }, [user]);
 
   return (
     <AccountingContext.Provider value={{ transactions, addTransaction, loading }}>
